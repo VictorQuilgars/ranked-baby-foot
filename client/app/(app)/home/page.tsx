@@ -19,11 +19,15 @@ export default async function HomePage() {
       user.user_metadata?.full_name?.replace(/\s+/g, '_').toLowerCase() ??
       `player_${user.id.slice(0, 8)}`;
 
-    const { data: created } = await createAdminClient()
+    const { data: created, error: insertError } = await createAdminClient()
       .from('players')
       .insert({ id: user.id, username, avatar_url: user.user_metadata?.avatar_url ?? null })
       .select()
       .single();
+
+    if (insertError) {
+      throw new Error(`Failed to create player: ${insertError.message} (code: ${insertError.code})`);
+    }
 
     player = created;
   }
