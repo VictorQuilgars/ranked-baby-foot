@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Plus, QrCode } from 'lucide-react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { SRBar } from '@/components/rank/SRBar';
-import type { RankName } from '@/types/player';
+import { RANK_COLORS, formatRankLabel, type RankName } from '@/types/player';
 
 interface HomeClientProps {
   player: {
@@ -31,93 +31,152 @@ export function HomeClient({ player }: HomeClientProps) {
 
   const isPlacement = player.placement_matches_left > 0;
   const rank = player.rank as RankName;
+  const rankColor = RANK_COLORS[rank];
 
   return (
     <div
-      className="min-h-screen"
-      style={{ background: 'radial-gradient(ellipse at top, #0f3460 0%, #1a1a2e 70%)' }}
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: '#0d111e' }}
     >
+      {/* Fond atmosphérique — glow couleur du rang */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 70% 45% at 50% 38%, ${rankColor}22 0%, transparent 70%)`,
+        }}
+      />
+      {/* Ligne de séparation subtile en haut */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${rankColor}55, transparent)` }}
+      />
+
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-4">
+      <div className="relative z-10 flex items-center justify-between px-5 pt-12 pb-2">
         <div>
-          <p className="text-muted text-sm">Bienvenue,</p>
-          <h2 className="text-xl font-black text-white">{player.username}</h2>
+          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted">Bienvenue,</p>
+          <h2 className="text-2xl font-black text-white leading-tight">{player.username}</h2>
         </div>
         {player.avatar_url ? (
           <img
             src={player.avatar_url}
             alt={player.username}
-            className="w-10 h-10 rounded-full border-2 border-white/20"
+            className="w-11 h-11 rounded-full border-2"
+            style={{ borderColor: `${rankColor}88` }}
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-night-3 border-2 border-white/20 flex items-center justify-center text-lg font-black text-accent">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-black text-white"
+            style={{ background: `${rankColor}33`, border: `2px solid ${rankColor}66` }}
+          >
             {player.username[0].toUpperCase()}
           </div>
         )}
       </div>
 
-      {/* Carte de rang principale — style Clash Royale */}
-      <motion.div
-        className="mx-5 rounded-3xl p-6 flex flex-col items-center gap-4"
-        style={{
-          background: 'linear-gradient(135deg, #16213e, #0f3460)',
-          border: '1.5px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-        }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Badge de rang — centré, grand */}
-        <RankBadge
-          rank={rank}
-          tier={player.rank_tier}
-          isPlacement={isPlacement}
-          size="xl"
-          showLabel={true}
-          animated={true}
-        />
+      {/* Zone centrale — Blason héro */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-6 px-5">
 
-        {/* SR + barre de progression */}
+        {/* Label RANKED PLAY style CoD */}
+        <motion.p
+          className="text-[10px] font-black uppercase tracking-[0.5em] mb-6"
+          style={{ color: `${rankColor}aa` }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          ★ Ranked Play ★
+        </motion.p>
+
+        {/* Blason — grand, sans cadre */}
+        <motion.div
+          className="relative flex items-center justify-center"
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          {/* Glow derrière le badge */}
+          <div
+            className="absolute rounded-full pointer-events-none"
+            style={{
+              width: '260px',
+              height: '260px',
+              background: `radial-gradient(circle, ${rankColor}30 0%, transparent 70%)`,
+              filter: 'blur(20px)',
+            }}
+          />
+          <RankBadge
+            rank={rank}
+            tier={player.rank_tier}
+            isPlacement={isPlacement}
+            size="hero"
+            showLabel={false}
+            animated
+          />
+        </motion.div>
+
+        {/* Rang + SR */}
+        <motion.div
+          className="flex flex-col items-center gap-1 mt-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          {isPlacement ? (
+            <>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted">En placement</p>
+              <p className="text-3xl font-black text-white">
+                {player.placement_matches_left} matchs restants
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted">Rang</p>
+              <h1
+                className="text-4xl font-black uppercase tracking-widest"
+                style={{ color: rankColor, filter: `drop-shadow(0 0 16px ${rankColor}88)` }}
+              >
+                {formatRankLabel(rank, player.rank_tier)}
+              </h1>
+              <p className="text-2xl font-black text-white mt-1">
+                {player.rank_points}{' '}
+                <span className="text-sm font-black uppercase tracking-widest text-muted">SR</span>
+              </p>
+            </>
+          )}
+        </motion.div>
+
+        {/* Barre SR */}
         {!isPlacement && (
-          <div className="w-full">
+          <motion.div
+            className="w-full mt-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35 }}
+          >
             <SRBar
               sr={player.rank_points}
               rank={rank}
               tier={player.rank_tier}
-              animated={true}
-              showNumbers={true}
+              animated
+              showNumbers
             />
-          </div>
+          </motion.div>
         )}
+      </div>
 
-        {isPlacement && (
-          <p className="text-muted text-sm text-center">
-            {player.placement_matches_left} match{player.placement_matches_left > 1 ? 's' : ''} de placement restant{player.placement_matches_left > 1 ? 's' : ''}
-          </p>
-        )}
+      {/* Boutons d'action — ancrés en bas */}
+      <div className="relative z-10 px-5 pb-28 flex flex-col gap-4 mt-6">
+        {/* Séparateur */}
+        <div
+          className="h-px w-full mb-2"
+          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }}
+        />
 
-        {/* Stats rapides */}
-        <div className="flex gap-6 mt-2">
-          {[
-            { label: 'Victoires', value: player.wins, color: '#22c55e' },
-            { label: 'Défaites', value: player.losses, color: '#ef4444' },
-            { label: 'Matchs', value: player.total_games, color: '#a8a8b3' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="flex flex-col items-center gap-1">
-              <span className="text-2xl font-black" style={{ color }}>{value}</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted">{label}</span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Boutons d'action */}
-      <div className="px-5 mt-6 flex flex-col gap-4">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.4 }}
         >
           <Link href="/match/create" className="btn-cr-red">
             <div>
@@ -131,7 +190,7 @@ export function HomeClient({ player }: HomeClientProps) {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.48 }}
         >
           <Link href="/match/join" className="btn-cr-dark">
             <div>

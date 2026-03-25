@@ -8,17 +8,18 @@ interface RankBadgeProps {
   rank: RankName;
   tier: number;
   isPlacement?: boolean;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'hero';
   showLabel?: boolean;
   animated?: boolean;
   className?: string;
 }
 
 const SIZE_CONFIG = {
-  sm:  { badge: 'w-9 h-9 text-base',   glow: '12px', label: 'text-xs' },
-  md:  { badge: 'w-14 h-14 text-xl',   glow: '18px', label: 'text-sm' },
-  lg:  { badge: 'w-20 h-20 text-3xl',  glow: '24px', label: 'text-base' },
-  xl:  { badge: 'w-28 h-28 text-5xl',  glow: '36px', label: 'text-lg' },
+  sm:   { badge: 'w-9 h-9 text-base',    glow: '12px', label: 'text-xs' },
+  md:   { badge: 'w-14 h-14 text-xl',    glow: '18px', label: 'text-sm' },
+  lg:   { badge: 'w-20 h-20 text-3xl',   glow: '24px', label: 'text-base' },
+  xl:   { badge: 'w-28 h-28 text-5xl',   glow: '36px', label: 'text-lg' },
+  hero: { badge: 'w-56 h-56 text-8xl',   glow: '60px', label: 'text-xl' },
 };
 
 const RANK_EMBLEMS: Record<RankName, string> = {
@@ -57,21 +58,22 @@ export function RankBadge({
       <motion.div
         className={cn(
           badge,
-          'relative flex items-center justify-center rounded-xl font-black select-none overflow-hidden',
+          'relative flex items-center justify-center font-black select-none overflow-hidden',
+          imageUrl ? 'rounded-none bg-transparent' : 'rounded-2xl',
           isIridescent && !imageUrl && 'bg-rank-iridescent bg-[length:300%_300%]',
         )}
         style={
-          isIridescent && !imageUrl
-            ? { animation: 'rank-shine 3s ease infinite' }
-            : {
-                background: imageUrl
-                  ? 'transparent'
-                  : `radial-gradient(circle at 35% 30%, ${color}66, ${color}18 70%)`,
-                border: `3px solid ${color}`,
-                boxShadow: `0 0 ${glow} ${color}77, inset 0 1px 0 ${color}99, 0 4px 12px rgba(0,0,0,0.4)`,
-              }
+          imageUrl
+            ? undefined // Pas de style inline — l'image parle seule
+            : isIridescent
+              ? { animation: 'rank-shine 3s ease infinite' }
+              : {
+                  background: `radial-gradient(circle at 35% 30%, ${color}66, ${color}18 70%)`,
+                  border: `3px solid ${color}`,
+                  boxShadow: `0 0 ${glow} ${color}77, inset 0 1px 0 ${color}99, 0 4px 12px rgba(0,0,0,0.4)`,
+                }
         }
-        animate={animated && !isIridescent ? {
+        animate={animated && !imageUrl && !isIridescent ? {
           boxShadow: [
             `0 0 ${glow} ${color}55, inset 0 1px 0 ${color}88, 0 4px 12px rgba(0,0,0,0.4)`,
             `0 0 ${glow} ${color}cc, inset 0 1px 0 ${color}aa, 0 4px 12px rgba(0,0,0,0.4)`,
@@ -82,17 +84,16 @@ export function RankBadge({
       >
         {imageUrl ? (
           <>
-            {/* Image du blason */}
             <img
               src={imageUrl}
               alt={`${rank} ${tier}`}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain"
             />
             {/* Vignette circulaire intérieure */}
             <div
               className="absolute inset-0"
               style={{
-                background: 'radial-gradient(circle, transparent 38%, rgba(0,0,0,0.72) 100%)',
+                background: 'radial-gradient(circle at center, transparent 42%, rgba(0,0,0,0.88) 100%)',
               }}
             />
           </>
@@ -101,7 +102,6 @@ export function RankBadge({
             <span role="img" aria-label={rank}>
               {isPlacement ? '?' : RANK_EMBLEMS[rank]}
             </span>
-            {/* Highlight interne (effet gemme) */}
             {!isIridescent && (
               <span
                 className="absolute top-1 left-1/2 -translate-x-1/2 rounded-full"
@@ -117,7 +117,7 @@ export function RankBadge({
         )}
 
         {/* Tier badge (I/II/III) */}
-        {!isIridescent && !isPlacement && (
+        {!isIridescent && !isPlacement && !imageUrl && (
           <span
             className="absolute -bottom-1.5 -right-1.5 text-[10px] font-black px-1.5 py-0.5 rounded-lg leading-none z-10"
             style={{
