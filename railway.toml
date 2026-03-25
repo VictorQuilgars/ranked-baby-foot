@@ -1,0 +1,12 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 10
+
+[[services]]
+name = "server"
+rootDirectory = "server"
