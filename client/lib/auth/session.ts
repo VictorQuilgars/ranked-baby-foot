@@ -1,14 +1,9 @@
-type CookieLike = {
-  name: string;
-  value: string;
-};
+import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 
-type CookieStoreLike = {
-  getAll(): CookieLike[];
-};
-
-export function hasSessionCookie(cookieStore: CookieStoreLike) {
-  return cookieStore
-    .getAll()
-    .some((cookie) => cookie.name.includes('-auth-token') && cookie.value.length > 0);
+// Vérifie la présence d'un cookie de session Supabase
+// Supabase SSR stocke le token dans "sb-<project-ref>-auth-token"
+export function hasSessionCookie(cookieStore: ReadonlyRequestCookies): boolean {
+  return cookieStore.getAll().some(
+    (c) => c.name.includes('-auth-token') && c.value.length > 0
+  );
 }
