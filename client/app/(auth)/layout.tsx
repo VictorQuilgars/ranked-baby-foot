@@ -1,13 +1,12 @@
-import { hasSessionCookie } from '@/lib/auth/session';
-import { cookies } from 'next/headers';
+import { createSessionClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
+  const supabase = await createSessionClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (hasSessionCookie(cookieStore)) {
-    redirect('/home');
-  }
+  // Rediriger uniquement si le token est réellement valide
+  if (user) redirect('/home');
 
   return children;
 }
