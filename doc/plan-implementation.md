@@ -1,360 +1,439 @@
 # Plan d'Implémentation — Ranked Baby Foot
 
-> Feuille de route technique détaillée pour le développement de l'application
-> Version 1.0 — Mars 2026
+> Feuille de route technique — Architecture 100% Next.js 15
+> Version 2.0 — Mars 2026
 
 ---
 
 ## Vue d'Ensemble
 
-Le projet est découpé en **7 phases** progressives, chacune livrant des fonctionnalités utilisables. L'ordre est pensé pour avoir une application testable dès la Phase 3.
-
 ```
-Phase 1 → Setup & Infrastructure
+Phase 1 → Setup & Infrastructure (Next.js 15 + Supabase)
 Phase 2 → Auth & Profils
 Phase 3 → Matchs & Lobbies (MVP testable)
 Phase 4 → Interface de Jeu & Arbitre
-Phase 5 → Algorithme de Points & Rangs
+Phase 5 → Algorithme SR & Rangs
 Phase 6 → UI Clash Royale & Animations
 Phase 7 → QR Code, Invitations & Polish
 ```
+
+**Architecture** : tout dans Next.js 15. Les Route Handlers (`app/api/`) remplacent Express. La `SUPABASE_SERVICE_ROLE_KEY` est utilisée uniquement dans ces handlers (jamais côté client).
 
 ---
 
 ## Phase 1 — Setup & Infrastructure
 
-**Durée estimée : 1-2 jours**
+### 1.1 Structure du Projet
 
-### 1.1 Initialisation du Monorepo
+Le projet est un **monorepo simplifié** — une seule application Next.js 15 :
+
+```
+ranked-baby-foot/
+└── app/                 ← dossier Next.js (ancien "client/")
+    ├── app/
+    │   ├── api/         ← Route Handlers (remplace Express)
+    │   ├── (auth)/
+    │   ├── (app)/
+    │   └── auth/
+    ├── components/
+    ├── lib/
+    │   ├── supabase/
+    │   └── services/    ← rankService.ts, matchCode.ts (server-only)
+    ├── hooks/
+    ├── stores/
+    ├── types/
+    └── middleware.ts
+```
+
+### 1.2 Dépendances
 
 ```bash
-ranked-baby-foot/
-├── client/   # Next.js
-└── server/   # Express
+npm install @supabase/supabase-js @supabase/ssr
+npm install framer-motion zustand zod lucide-react
+npm install clsx tailwind-merge
+npm install qrcode html5-qrcode canvas-confetti
+npm install --save-dev @types/qrcode @types/canvas-confetti
 ```
 
-**Client (Next.js)**
-- [ ] `npx create-next-app@latest client --typescript --tailwind --app`
-- [ ] Installer les dépendances : `zustand`, `framer-motion`, `zod`, `@supabase/supabase-js`, `@supabase/ssr`, `qrcode`, `html5-qrcode`, `lucide-react`
-- [ ] Configurer les variables d'environnement (`.env.local`) : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_API_URL`
-- [ ] Configurer Tailwind avec la palette dark (couleurs custom dans `tailwind.config.ts`)
-- [ ] Mettre en place la structure de dossiers (`app/`, `components/`, `hooks/`, `lib/`, `stores/`)
+### 1.3 Variables d'Environnement
 
-**Server (Express)**
-- [ ] `mkdir server && cd server && npm init -y`
-- [ ] Installer : `express`, `@supabase/supabase-js`, `zod`, `cors`, `helmet`, `express-rate-limit`, `dotenv`, `tsx` (dev), `typescript`
-- [ ] Configurer TypeScript (`tsconfig.json`)
-- [ ] Configurer les variables d'environnement (`.env`) : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT`
-- [ ] Script de démarrage dev avec `nodemon` + `tsx`
-
-### 1.2 Supabase Setup
-
-- [ ] Créer un projet Supabase
-- [ ] Activer l'authentification Google (OAuth App dans Google Cloud Console)
-- [ ] Activer l'authentification Apple (nécessite compte Apple Developer)
-- [ ] Créer les tables via l'éditeur SQL Supabase :
-  - `players`
-  - `matches`
-  - `match_players`
-  - `match_events`
-- [ ] Configurer les **Row Level Security (RLS)** :
-  - `players` : lecture publique, écriture uniquement sur son propre profil
-  - `matches` : lecture publique, création authentifiée, modification restreinte
-  - `match_players` : lecture publique, insertion via server-side uniquement
-  - `match_events` : lecture publique, insertion via arbitre ou validation joueurs
-- [ ] Activer **Supabase Realtime** sur les tables `matches`, `match_players`, `match_events`
-- [ ] Créer les fonctions SQL utilitaires (calcul de rang depuis les SR)
-
-### 1.3 Scripts SQL
-
-```sql
--- Fonction pour obtenir le rang depuis les SR
-CREATE OR REPLACE FUNCTION get_rank_from_sr(sr integer)
-RETURNS text AS $$
-BEGIN
-  IF sr >= 4500 THEN RETURN 'Iridescent';
-  ELSIF sr >= 3000 THEN RETURN 'Crimson';
-  ELSIF sr >= 2000 THEN RETURN 'Diamond';
-  ELSIF sr >= 1200 THEN RETURN 'Platinum';
-  ELSIF sr >= 700 THEN RETURN 'Gold';
-  ELSIF sr >= 300 THEN RETURN 'Silver';
-  ELSE RETURN 'Bronze';
-  END IF;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger pour mettre à jour rank et rank_tier automatiquement
-CREATE OR REPLACE FUNCTION update_player_rank()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.rank := get_rank_from_sr(NEW.rank_points);
-  -- Calcul du tier (I, II, III) selon la position dans le palier
-  -- [logique détaillée à implémenter dans rankService]
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+**`.env.local`**
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
+
+> `SUPABASE_SERVICE_ROLE_KEY` sans prefix `NEXT_PUBLIC_` → accessible uniquement dans les Route Handlers et Server Actions, jamais envoyée au navigateur.
+
+### 1.4 Clients Supabase
+
+**`lib/supabase/client.ts`** — navigateur (anon key)
+```typescript
+import { createBrowserClient } from '@supabase/ssr';
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+```
+
+**`lib/supabase/server.ts`** — serveur (service role key)
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+// Client avec service_role : contourne les RLS
+// À utiliser UNIQUEMENT dans les Route Handlers et Server Actions
+export function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
+
+// Client avec anon key + cookies (pour lire la session utilisateur)
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+
+export async function createSessionClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (toSet) => {
+          try { toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); }
+          catch { /* Server Component */ }
+        },
+      },
+    }
+  );
+}
+```
+
+**`lib/supabase/auth.ts`** — helper pour les Route Handlers
+```typescript
+import { NextRequest } from 'next/server';
+import { createAdminClient } from './server';
+
+// Vérifie le JWT depuis le header Authorization
+// Retourne le user ou null
+export async function getUserFromRequest(req: NextRequest) {
+  const token = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (!token) return null;
+  const { data: { user } } = await createAdminClient().auth.getUser(token);
+  return user ?? null;
+}
+
+// Retourne le user ou throw 401
+export async function requireUserFromRequest(req: NextRequest) {
+  const user = await getUserFromRequest(req);
+  if (!user) throw new Response(JSON.stringify({ error: 'Non authentifié' }), { status: 401 });
+  return user;
+}
+```
+
+### 1.5 Middleware
+
+**`middleware.ts`** — protection des routes (Edge-safe, sans @supabase/ssr)
+```typescript
+import { type NextRequest, NextResponse } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isAuthRoute = pathname.startsWith('/login');
+  const isPublicRoute = pathname.startsWith('/auth') || pathname.startsWith('/api');
+
+  const hasSession = request.cookies.getAll().some(
+    (c) => c.name.includes('-auth-token') && c.value.length > 0
+  );
+
+  if (!hasSession && !isAuthRoute && !isPublicRoute) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  if (hasSession && isAuthRoute) {
+    return NextResponse.redirect(new URL('/home', request.url));
+  }
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+};
+```
+
+### 1.6 Schéma Supabase
+
+Exécuter `doc/supabase-init.sql` dans l'éditeur SQL Supabase.
 
 ---
 
 ## Phase 2 — Authentification & Profils
 
-**Durée estimée : 2-3 jours**
+### 2.1 Pages Auth
 
-### 2.1 Auth (Client)
+**`app/(auth)/login/page.tsx`** — Client Component
+- Bouton "Continuer avec Google" → `supabase.auth.signInWithOAuth({ provider: 'google' })`
+- Redirect vers `/auth/callback` après login
 
-- [ ] Créer le client Supabase SSR (`lib/supabase/server.ts` et `lib/supabase/client.ts`)
-- [ ] Implémenter les pages auth :
-  - `/login` : boutons "Continuer avec Google" + "Continuer avec Apple" + formulaire email
-  - `/auth/callback` : route de callback OAuth
-- [ ] Middleware Next.js pour protéger les routes (`middleware.ts`) — redirect vers `/login` si non authentifié
-- [ ] Hook `useAuth()` : état utilisateur courant, loading, logout
-- [ ] Création automatique du profil `players` lors du premier login (via Supabase Database Webhook ou trigger SQL sur `auth.users`)
+**`app/auth/callback/route.ts`** — Route Handler
+```typescript
+import { createSessionClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-### 2.2 Profils (Client + Server)
-
-**Endpoints Express**
+export async function GET(request: NextRequest) {
+  const code = request.nextUrl.searchParams.get('code');
+  if (code) {
+    const supabase = await createSessionClient();
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+  return NextResponse.redirect(new URL('/home', request.url));
+}
 ```
-GET  /api/players/:id        → Profil public d'un joueur
-PUT  /api/players/me         → Mise à jour du profil (username, avatar, position préférée)
-GET  /api/players/me/history → Historique des 20 derniers matchs
+
+### 2.2 Création automatique du profil
+
+Dans `app/(app)/home/page.tsx` (Server Component) :
+```typescript
+// Si le joueur n'a pas de profil → le créer automatiquement
+if (!player) {
+  await createAdminClient()
+    .from('players')
+    .insert({ id: user.id, username: ..., avatar_url: ... });
+}
 ```
 
-**Pages Next.js**
-- [ ] `/profile/me` : profil personnel éditable
-  - Avatar (upload ou depuis OAuth)
-  - Changement de pseudo (validation unicité en temps réel)
-  - Carte de rang animée (badge + RP + barre de progression)
-  - Statistiques en grille (victoires, défaites, buts, MVP)
-  - Liste des derniers matchs
-- [ ] `/profile/[id]` : profil public d'un autre joueur (read-only)
+### 2.3 Route Handlers — Joueurs
 
-**Composants à créer**
-- [ ] `<RankBadge />` : badge animé avec icône du rang, couleur, et tier (I/II/III)
-- [ ] `<StatsGrid />` : grille de statistiques
-- [ ] `<MatchHistory />` : liste des matchs passés avec résultat coloré
+**`app/api/players/me/route.ts`**
+```typescript
+// GET  → profil de l'utilisateur connecté
+// PUT  → modifier username, avatar_url, preferred_position
+```
+
+**`app/api/players/me/history/route.ts`**
+```typescript
+// GET → 20 derniers matchs de l'utilisateur
+```
+
+**`app/api/players/search/route.ts`**
+```typescript
+// GET ?q=pseudo → recherche par username (min 2 chars, max 10 résultats)
+```
+
+**`app/api/players/[id]/route.ts`**
+```typescript
+// GET → profil public d'un joueur
+```
+
+### 2.4 Pattern standard des Route Handlers
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/server';
+import { requireUserFromRequest } from '@/lib/supabase/auth';
+import { z } from 'zod';
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await requireUserFromRequest(request);
+    const body = await request.json();
+
+    const schema = z.object({ ... });
+    const data = schema.parse(body);
+
+    const supabase = createAdminClient();
+    const { data: result, error } = await supabase
+      .from('...')
+      .insert({ ... })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ data: result }, { status: 201 });
+
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Données invalides', details: e.errors }, { status: 400 });
+    }
+    if (e instanceof Response) return e as unknown as NextResponse;
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+```
 
 ---
 
 ## Phase 3 — Matchs & Lobbies
 
-**Durée estimée : 3-4 jours** ← *Application testable à partir d'ici*
-
-### 3.1 Création de Match (Server)
+### 3.1 Route Handlers — Matchs
 
 ```
-POST /api/matches             → Créer un match (génère le code 6 chars)
-GET  /api/matches/:id         → Détails d'un match
-GET  /api/matches/code/:code  → Trouver un match via son code
-POST /api/matches/:id/join    → Rejoindre un match (équipe + position)
-POST /api/matches/:id/leave   → Quitter le lobby
-POST /api/matches/:id/start   → Démarrer le match (hôte uniquement)
-PUT  /api/matches/:id/teams   → Déplacer joueurs entre équipes (hôte)
-POST /api/matches/:id/referee → Désigner l'arbitre
+POST   /api/matches                    → Créer un match
+GET    /api/matches/[id]               → Détails d'un match
+GET    /api/matches/code/[code]        → Trouver via code
+POST   /api/matches/[id]/join          → Rejoindre (équipe + position)
+POST   /api/matches/[id]/leave         → Quitter le lobby
+POST   /api/matches/[id]/start         → Démarrer (hôte uniquement)
+POST   /api/matches/[id]/referee       → Désigner l'arbitre
 ```
 
-### 3.2 Lobby en Temps Réel (Client)
+### 3.2 Générateur de Code
 
-- [ ] Page `/match/create` :
-  - Formulaire : nom du match (optionnel), score cible, choix équipe & position
-  - Bouton "Créer" → génère le match et redirige vers le lobby
-- [ ] Page `/match/[id]` (Lobby) :
-  - Affichage des 4 slots (2 par équipe) avec avatars + positions
-  - Slot vide = carte grise avec "En attente..."
-  - Code de lobby affiché en gros avec bouton copier
-  - Bouton QR Code (ouvre un modal plein écran avec le QR)
-  - Bouton "Rejoindre comme arbitre" (si pas déjà arbitre désigné)
-  - Bouton "Démarrer" (hôte uniquement, actif si 4 joueurs présents)
-  - Mise à jour en temps réel via Supabase Realtime (subscription sur `match_players`)
+**`lib/services/matchCode.ts`**
+```typescript
+export function generateMatchCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans I, O, 0, 1
+  return Array.from({ length: 6 }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join('');
+}
+```
 
-- [ ] Page `/match/join` :
-  - Champ pour entrer le code à 6 caractères
-  - Choix équipe et position si des slots sont disponibles
-  - Scanner QR code (ouvre la caméra avec `html5-qrcode`)
+### 3.3 Pages
 
-### 3.3 Génération du Code & QR
+- `app/(app)/match/create/page.tsx` — formulaire + appel POST `/api/matches`
+- `app/(app)/match/join/page.tsx` — saisie code + scan QR
+- `app/(app)/match/[id]/page.tsx` — lobby Realtime
+
+### 3.4 Realtime dans le Lobby
 
 ```typescript
-// server/src/utils/matchCode.ts
-export function generateMatchCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans I, O, 0, 1 pour lisibilité
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
+// Dans un Client Component
+useEffect(() => {
+  const channel = supabase
+    .channel(`match:${matchId}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'match_players',
+      filter: `match_id=eq.${matchId}`,
+    }, (payload) => {
+      // Mettre à jour l'état du lobby
+    })
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}, [matchId]);
 ```
 
 ---
 
 ## Phase 4 — Interface de Jeu & Arbitre
 
-**Durée estimée : 3-4 jours**
-
-### 4.1 Endpoints de Match en Cours (Server)
+### 4.1 Route Handlers — Jeu
 
 ```
-POST /api/matches/:id/goal          → Enregistrer un but (arbitre ou validation joueurs)
-POST /api/matches/:id/goal/cancel   → Annuler le dernier but
-POST /api/matches/:id/finish        → Terminer le match manuellement
-GET  /api/matches/:id/events        → Liste des événements du match
+POST /api/matches/[id]/goal         → Enregistrer un but
+POST /api/matches/[id]/goal/cancel  → Annuler le dernier but
+POST /api/matches/[id]/finish       → Terminer le match
+GET  /api/matches/[id]/events       → Liste des événements
 ```
 
-**Validation d'un but sans arbitre** : le serveur attend une confirmation de 3 joueurs sur 4 (vote avec timeout de 30s). Si pas de consensus → but refusé.
+### 4.2 Fin de Match — Déclenchement du Calcul SR
 
-### 4.2 Interface de Jeu (Client)
+Dans `app/api/matches/[id]/finish/route.ts` :
+```typescript
+// 1. Marquer le match comme finished
+// 2. Appeler rankService.calculateSRChanges(matchData)
+// 3. Mettre à jour players et match_players en transaction
+// (utiliser createAdminClient() qui contourne les RLS)
+```
 
-**Page `/match/[id]/play`** (vue joueur)
-- [ ] Tableau de score central (Score A — Score B) en très grand
-- [ ] Noms et avatars des joueurs de chaque équipe
-- [ ] Feed d'événements : liste des buts avec horodatage et icône du buteur
-- [ ] Si sans arbitre : bouton "But pour nous" → déclenche le processus de vote
-- [ ] Écran de vote : notification push aux autres joueurs, 30s pour confirmer/infirmer
+### 4.3 Pages
 
-**Page `/match/[id]/referee`** (vue arbitre)
-- [ ] Score en haut (mis en avant)
-- [ ] Deux gros boutons : **⚽ But Équipe A** / **⚽ But Équipe B**
-- [ ] Après appui : modal de sélection du buteur (liste des 4 joueurs + indication de position)
-- [ ] Bouton "Annuler le dernier but" (avec confirmation) en bas
-- [ ] Historique des buts scrollable
-
-### 4.3 Écran de Fin de Match
-
-- [ ] Animation de victoire / défaite (confettis ou effet dramatique Clash Royale)
-- [ ] Scores finaux
-- [ ] Détail des buts par joueur
-- [ ] MVP mis en avant avec couronne animée
-- [ ] Points gagnés/perdus pour chaque joueur (+25 SR, -18 SR…) avec animation compteur
-- [ ] Si montée de rang : animation de rang up spéciale
-- [ ] Bouton "Retour à l'accueil"
+- `app/(app)/match/[id]/page.tsx` — vue joueur (score, events, votes)
+- `app/(app)/match/[id]/referee/page.tsx` — interface arbitre
 
 ---
 
-## Phase 5 — Algorithme de Points & Rangs
+## Phase 5 — Algorithme SR & Rangs
 
-**Durée estimée : 3-4 jours**
+### 5.1 rankService.ts
 
-### 5.1 Service de Calcul (Server)
-
-**`server/src/services/rankService.ts`**
+**`lib/services/rankService.ts`** — server-only (importé uniquement dans les Route Handlers)
 
 ```typescript
-interface MatchResult {
-  players: PlayerMatchData[];
-  scoreA: number;
-  scoreB: number;
-  winnerTeam: 'A' | 'B' | 'draw';
-}
+export type RankName = 'Bronze' | 'Silver' | 'Gold' | 'Platinum' | 'Diamond' | 'Crimson' | 'Iridescent';
 
-interface PlayerMatchData {
+export interface PlayerMatchData {
   playerId: string;
   team: 'A' | 'B';
   position: 'attacker' | 'goalkeeper';
   goalsScored: number;
   currentSR: number;
-  currentRank: string;
-  currentTier: number;
-  hiddenMmr: number;          // HPR : niveau réel estimé
-  placementMatchesLeft: number; // 0 = placement terminé
-  rankShield: number;          // Matchs de protection post-montée restants
-  dailyLossForgiven: boolean;  // Première défaite du jour déjà utilisée
+  hiddenMmr: number;
+  placementMatchesLeft: number;
+  rankShield: number;
+  dailyLossForgiven: boolean;
+  rank: RankName;
+  rankTier: number;
 }
 
-export function calculateSRChanges(result: MatchResult): SRChange[] {
-  // 1. Identifier les joueurs en placement (placementMatchesLeft > 0)
-  // 2. Calculer le rang moyen de chaque équipe (getRankValue)
-  // 3. Calculer le modificateur adversaires (rankDiff)
-  // 4. Identifier le MVP (score MVP = buts × (gardien ? 2 : 1))
-  // 5. Calculer l'écart de buts
-  // 6. Calculer le mod_hpr pour chaque joueur (écart hiddenMmr - rankPoints)
-  // 7. Appliquer la formule : RP_base × mod_hpr × mod_adversaires × mod_mvp × mod_ecart
-  // 8. Appliquer loss forgiveness si applicable
-  // 9. Clamp entre -35 et +50
+export interface SRChange {
+  playerId: string;
+  srDelta: number;        // Valeur finale après clamp
+  newSR: number;
+  newRank: RankName;
+  newTier: number;
+  isMvp: boolean;
+  newHiddenMmr: number;
+  rankUp: boolean;        // true si montée de rang
+  rankDown: boolean;      // true si descente de rang
+  shieldUsed: boolean;
+  forgiven: boolean;      // true si loss forgiveness appliqué
 }
+
+export function calculateSRChanges(
+  players: PlayerMatchData[],
+  scoreA: number,
+  scoreB: number,
+  winnerTeam: 'A' | 'B' | 'draw'
+): SRChange[] { ... }
 ```
 
-**Calcul du Rang Moyen**
+**Valeur de rang**
 ```typescript
-function getRankValue(rank: string, tier: number): number {
-  const rankValues = { Bronze: 0, Silver: 1, Gold: 2, Platinum: 3, Diamond: 4, Crimson: 5, Iridescent: 6 };
-  return rankValues[rank] * 3 + (tier - 1); // Valeur de 0 à 20
+export function getRankValue(rank: RankName, tier: number): number {
+  const base = { Bronze: 0, Silver: 1, Gold: 2, Platinum: 3, Diamond: 4, Crimson: 5, Iridescent: 6 };
+  return base[rank] * 3 + (rank === 'Iridescent' ? 0 : tier - 1);
 }
 ```
 
-### 5.2 Calcul du Hidden MMR
-
-Le `hidden_mmr` est mis à jour après chaque match via une formule Elo simplifiée :
-
+**Seuils SR → Rang**
 ```typescript
-function updateHiddenMmr(currentMmr: number, result: MatchResult, opponentAvgRankValue: number): number {
-  // Base : +40 victoire, -30 défaite, +10 égalité
-  const base = result === 'win' ? 40 : result === 'loss' ? -30 : 10;
-  // Facteur qualité adversaires : normalisé autour de 1.0 (rang 10 = neutre)
-  const opponentFactor = Math.min(2.0, Math.max(0.5, opponentAvgRankValue / 10));
-  const delta = Math.round(base * opponentFactor);
-  return Math.max(0, currentMmr + delta);
+export function getRankFromSR(sr: number): RankName {
+  if (sr >= 4500) return 'Iridescent';
+  if (sr >= 3000) return 'Crimson';
+  if (sr >= 2000) return 'Diamond';
+  if (sr >= 1200) return 'Platinum';
+  if (sr >= 700)  return 'Gold';
+  if (sr >= 300)  return 'Silver';
+  return 'Bronze';
 }
 ```
 
-### 5.3 Modificateur HPR
+### 5.2 Cron — Reset daily_loss_forgiven
 
-```typescript
-function getHprModifier(hiddenMmr: number, rankPoints: number, isPlacement: boolean): number {
-  if (isPlacement) return 2.5; // Phase de placement : accélération maximale
-  const gap = hiddenMmr - rankPoints;
-  if (gap > 400) return 2.0;
-  if (gap > 200) return 1.5;
-  if (gap > 50)  return 1.2;
-  if (gap > -50) return 1.0;
-  return 0.8; // Au-dessus du vrai niveau : le système freine
-}
-```
-
-### 5.4 Application des Changements (Server)
-
-Après calcul, le serveur met à jour **en transaction atomique** :
-- `players.rank_points` ± delta
-- `players.hidden_mmr` (mise à jour selon la formule Elo)
-- `players.rank` et `players.rank_tier` (recalculés depuis les nouveaux SR)
-- `players.placement_matches_left` (décrémenté si > 0)
-- `players.rank_shield` (décrémenté si > 0, ou remis à 3 en cas de montée de rang)
-- `players.daily_loss_forgiven` (mis à `true` si la protection a été utilisée)
-- `players.total_games`, `players.wins` / `losses`
-- `players.goals_scored`, `players.mvp_count`
-- `match_players.sr_change` et `match_players.is_mvp`
-
-### 5.5 Cron Job — Reset Quotidien
-
-Un job Supabase (ou Edge Function schedulée) tourne chaque nuit à minuit pour remettre `daily_loss_forgiven = false` pour tous les joueurs :
-
+Dans Supabase → Extensions → pg_cron :
 ```sql
--- Via Supabase pg_cron (à configurer dans le dashboard)
 SELECT cron.schedule(
   'reset-daily-loss-forgiven',
-  '0 0 * * *',  -- minuit chaque jour
+  '0 0 * * *',
   $$ UPDATE players SET daily_loss_forgiven = false $$
 );
 ```
-
-### 5.6 Tests Unitaires
-
-- [ ] Test placement : 5 premiers matchs → `mod_hpr` = 2.5, rang attribué au 5ème
-- [ ] Test HPR élevé : `hidden_mmr` = 800, `rank_points` = 100 → `mod_hpr` = 2.0
-- [ ] Test HPR équilibré : `hidden_mmr` ≈ `rank_points` → `mod_hpr` = 1.0
-- [ ] Test HPR négatif : joueur au-dessus de son niveau → `mod_hpr` = 0.8
-- [ ] Test victoire contre équipe supérieure → bonus correct
-- [ ] Test défaite serrée contre équipe supérieure → malus réduit
-- [ ] Test gardien MVP → calcul ×2 correct
-- [ ] Test loss forgiveness jour 1 → pas de perte
-- [ ] Test loss forgiveness jour 2 → perte normale
-- [ ] Test bouclier post-montée → pas de descente sur 3 matchs
-- [ ] Test limite max/min SR (+50 / -35)
-- [ ] Test montée de rang automatique
 
 ---
 
 ## Phase 6 — UI Clash Royale & Animations
 
-**Durée estimée : 3-4 jours**
-
-### 6.1 Design System
+### 6.1 Design System (déjà partiellement en place)
 
 **`tailwind.config.ts`** — couleurs custom
 ```javascript
@@ -364,160 +443,109 @@ colors: {
   'night-3': '#0f3460',
   'accent': '#e94560',
   'gold-ui': '#f5a623',
-  // Couleurs de rangs
   'rank-bronze': '#cd7f32',
   'rank-silver': '#c0c0c0',
   'rank-gold': '#ffd700',
   'rank-platinum': '#00b4d8',
   'rank-diamond': '#7b2fff',
   'rank-crimson': '#dc143c',
-  'rank-iridescent': '#ff00ff', // gradient arc-en-ciel animé en prod
+  'rank-iridescent': '#ff00ff',
 }
 ```
 
-**Composants UI à créer**
-- [ ] `<Card />` : carte générique avec effet glassmorphism et bordure lumineuse
-- [ ] `<RankBadge />` : badge animé (pulsation + glow selon rang)
-- [ ] `<SRBar />` : barre de progression SR avec animation de remplissage
-- [ ] `<PlayerCard />` : carte joueur style Clash Royale (avatar, pseudo, rang)
-- [ ] `<MatchCard />` : carte de match dans le feed (score, rangs, résultat)
-- [ ] `<Button />` : bouton avec variantes (primary/secondary/danger) et animations
+### 6.2 Composants
 
-### 6.2 Animations Framer Motion
+- `<RankBadge />` — badge animé avec glow, taille sm/md/lg/xl
+- `<SRBar />` — barre de progression SR avec animation
+- `<BottomNav />` — navigation bas d'écran (safe area iOS)
+- `<PlayerCard />` — carte joueur style Clash Royale
+- `<MatchCard />` — carte de match dans le feed
 
-- [ ] **Lobby** : apparition des joueurs au join (fade + slide up)
-- [ ] **But** : flash sur le score + animation +1 qui monte
-- [ ] **Fin de match** :
-  - Victoire : écran doré + confettis (`canvas-confetti`)
-  - Défaite : écran sombre + tremblement subtil
-- [ ] **MVP** : couronne qui tombe sur l'avatar du MVP
-- [ ] **Rank Up** : animation épique (lumière, nouveau badge, texte "RANG SUPÉRIEUR!")
-- [ ] **Leaderboard** : entrées qui se classent avec animation de réordonnancement
+### 6.3 Animations Framer Motion
 
-### 6.3 Layout Global
-
-- [ ] Navigation bas d'écran (style app mobile) avec 4 icônes
-- [ ] Header contextuel (titre de la page + avatar en haut à droite)
-- [ ] Splash screen au lancement (logo + fond animé)
-- [ ] Dark theme par défaut (pas de toggle light/dark dans un premier temps)
+- **Lobby** : apparition des joueurs (fade + slide up)
+- **But** : flash sur le score + animation +1
+- **Fin de match** : victoire (confettis) / défaite (tremblement)
+- **MVP** : couronne animée
+- **Rank Up** : animation épique avec nouveau badge
 
 ---
 
 ## Phase 7 — QR Code, Invitations & Polish
 
-**Durée estimée : 2-3 jours**
-
 ### 7.1 QR Code
 
-- [ ] Génération côté client avec `qrcode` : URL = `https://app.com/match/join?code=XXXXXX`
-- [ ] Affichage en modal plein écran (fond noir, QR blanc, très lisible)
-- [ ] Scanner côté client avec `html5-qrcode` :
-  - Demande de permission caméra
-  - Overlay de scan avec cadre clignotant
-  - Redirect automatique vers le lobby au scan
+- Génération avec `qrcode` dans un Client Component
+- URL : `https://app.com/match/join?code=XXXXXX`
+- Modal plein écran (fond noir, QR blanc)
+- Scanner avec `html5-qrcode` (nécessite HTTPS en prod)
 
-### 7.2 Invitations
+### 7.2 Route Handlers — Invitations
 
-**Endpoints**
 ```
-POST /api/invitations          → Inviter un joueur (matchId + invitedPlayerId)
-GET  /api/invitations/pending  → Mes invitations en attente
-POST /api/invitations/:id/accept
-POST /api/invitations/:id/decline
+POST /api/invitations                    → Inviter un joueur
+GET  /api/invitations/pending            → Mes invitations en attente
+POST /api/invitations/[id]/accept
+POST /api/invitations/[id]/decline
 ```
 
-**Table `invitations`**
-```sql
-id uuid PRIMARY KEY
-match_id uuid REFERENCES matches
-inviter_id uuid REFERENCES players
-invited_id uuid REFERENCES players
-status text DEFAULT 'pending' (pending | accepted | declined | expired)
-created_at timestamp
-expires_at timestamp (15 min après création)
-```
+Notification en temps réel via Supabase Realtime (subscription sur `invitations`).
 
-**Notifications** (Supabase Realtime)
-- [ ] Le joueur invité reçoit une notification en temps réel
-- [ ] Banner en haut de l'écran : "Tu as été invité à un match par [pseudo]" avec boutons Accepter/Refuser
+### 7.3 Feed d'Accueil
 
-### 7.3 Recherche de Joueurs
-
-- [ ] Endpoint `GET /api/players/search?q=pseudo` (minimum 2 caractères, limite 10 résultats)
-- [ ] Composant `<PlayerSearch />` avec debounce (300ms)
-
-### 7.4 Feed d'Accueil
-
-- [ ] Liste des matchs récents dans l'école (en cours + terminés)
-- [ ] Filtres : "En cours" / "Terminés" / "Mes matchs"
-- [ ] Bouton "Créer un Match" proéminent en haut (FAB style)
-
-### 7.5 Tests End-to-End & Corrections
-
-- [ ] Scénario complet : création match → join × 3 → arbitre → jeu → fin → calcul RP
-- [ ] Test sur différentes tailles d'écran (375px, 390px, 414px)
-- [ ] Correction des bugs remontés
-- [ ] Optimisation des performances (lazy loading, image optimization Next.js)
-
----
-
-## Ordre des Priorités de Développement
-
-### Must-Have (MVP)
-1. Auth Google
-2. Profil joueur basique
-3. Création / Rejoindre un match via code
-4. Interface arbitre pour saisir les scores
-5. Calcul des RP et mise à jour des rangs
-6. Leaderboard
-
-### Should-Have
-7. QR Code scan
-8. Invitations entre joueurs
-9. Animations UI (rang up, fin de match)
-10. Badges de rang avec design Clash Royale
-
-### Nice-to-Have
-11. Auth Apple
-12. Feed d'activité
-13. Statistiques avancées (graphiques, évolution du rang)
-14. Notifications push (PWA)
-15. Mode spectateur
+- Derniers matchs de l'école (en cours + terminés)
+- Filtres : En cours / Terminés / Mes matchs
 
 ---
 
 ## Variables d'Environnement
 
-**`client/.env.local`**
+**`.env.local`** (jamais commité)
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-**`server/.env`**
-```env
-PORT=3001
-SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
-CLIENT_URL=http://localhost:3000
-```
+**Vercel** : ajouter ces 3 variables dans Settings → Environment Variables.
+
+> Plus de `NEXT_PUBLIC_API_URL` — l'API est dans le même projet Next.js.
 
 ---
 
 ## Commandes de Développement
 
 ```bash
-# Client
-cd client && npm run dev          # Démarrer Next.js (port 3000)
-
-# Server
-cd server && npm run dev          # Démarrer Express avec hot-reload (port 3001)
-
-# Les deux en parallèle (depuis la racine)
-# Utiliser concurrently ou deux terminaux
+# Depuis le dossier du projet Next.js
+npm run dev     # port 3000 (client + API)
+npm run build   # build de production
+npm run lint    # vérification TypeScript + ESLint
 ```
 
 ---
 
-*Plan rédigé le 25 mars 2026*
+## Ordre des Priorités
+
+### Must-Have (MVP)
+1. Auth Google + création profil automatique
+2. Home page avec badge de rang
+3. Création / Rejoindre un match via code
+4. Interface arbitre pour saisir les scores
+5. Calcul SR et mise à jour des rangs
+6. Leaderboard
+
+### Should-Have
+7. QR Code
+8. Invitations entre joueurs
+9. Animations UI (rank up, fin de match)
+10. Profil éditable
+
+### Nice-to-Have
+11. Auth Apple
+12. Feed d'activité
+13. Statistiques avancées
+14. Notifications push (PWA)
+
+---
+
+*Plan mis à jour le 25 mars 2026 — Version 2.0 (migration full Next.js 15)*
