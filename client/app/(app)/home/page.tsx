@@ -1,31 +1,27 @@
-import { createClient } from '@/lib/supabase/server';
+import { createSessionClient, createAdminClient } from '@/lib/supabase/server';
 import { HomeClient } from './HomeClient';
+import { redirect } from 'next/navigation';
 
 export default async function HomePage() {
-  const supabase = await createClient();
+  const supabase = await createSessionClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user) redirect('/login');
 
-  let { data: player } = await supabase
+  let { data: player } = await createAdminClient()
     .from('players')
     .select('*')
     .eq('id', user.id)
     .single();
 
-  // Première connexion — créer le profil automatiquement
   if (!player) {
     const username =
       user.user_metadata?.full_name?.replace(/\s+/g, '_').toLowerCase() ??
       `player_${user.id.slice(0, 8)}`;
 
-    const { data: created } = await supabase
+    const { data: created } = await createAdminClient()
       .from('players')
-      .insert({
-        id: user.id,
-        username,
-        avatar_url: user.user_metadata?.avatar_url ?? null,
-      })
+      .insert({ id: user.id, username, avatar_url: user.user_metadata?.avatar_url ?? null })
       .select()
       .single();
 

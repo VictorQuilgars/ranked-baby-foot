@@ -1,37 +1,33 @@
-import { createClient } from './supabase/client';
+// Helper pour les appels API vers les Route Handlers Next.js
+// Plus besoin d'URL externe — même domaine
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+type FetchOptions = {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  body?: unknown;
+  token?: string;
+};
 
-async function getAuthHeaders(): Promise<HeadersInit> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  return {
+export async function apiRequest<T>(path: string, options: FetchOptions = {}): Promise<T> {
+  const { method = 'GET', body, token } = options;
+
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
   };
-}
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { ...headers, ...options?.headers },
-  });
-
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.error ?? `Erreur ${res.status}`);
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  return json.data as T;
-}
+  const response = await fetch(path, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
 
-export const api = {
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
-  put: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
-};
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Erreur réseau' }));
+    throw new Error(error.error ?? `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
