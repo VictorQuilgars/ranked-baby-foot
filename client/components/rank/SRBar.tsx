@@ -27,14 +27,21 @@ export function SRBar({ sr, rank, tier, animated = true, showNumbers = true }: S
 
   if (isIridescent) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {showNumbers && (
-          <div className="flex justify-between text-xs text-muted">
-            <span>{sr} SR</span>
-            <span>MAX</span>
+          <div className="flex justify-between text-xs font-bold">
+            <span style={{ background: 'linear-gradient(135deg, #ff0080, #ff8c00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {sr} SR
+            </span>
+            <span className="text-muted">MAX</span>
           </div>
         )}
-        <div className="h-2 rounded-full bg-rank-iridescent bg-[length:300%_100%] animate-rank-shine" />
+        <div
+          className="h-3 rounded-full bg-rank-iridescent bg-[length:300%_100%] animate-rank-shine relative overflow-hidden"
+          style={{ boxShadow: '0 0 10px rgba(255,0,255,0.5), inset 0 2px 4px rgba(0,0,0,0.3)' }}
+        >
+          <div className="shimmer-overlay" />
+        </div>
       </div>
     );
   }
@@ -43,27 +50,32 @@ export function SRBar({ sr, rank, tier, animated = true, showNumbers = true }: S
   const progress = Math.min(100, Math.max(0, ((sr - min) / (max - min + 1)) * 100));
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {showNumbers && (
-        <div className="flex justify-between text-xs text-muted">
+        <div className="flex justify-between text-xs font-bold">
           <span style={{ color }}>{sr} SR</span>
-          <span>{max} SR</span>
+          <span className="text-muted">{max} SR</span>
         </div>
       )}
       <div
-        className="h-2 rounded-full overflow-hidden"
-        style={{ backgroundColor: `${color}22` }}
+        className="h-3 rounded-full overflow-hidden"
+        style={{
+          backgroundColor: `${color}20`,
+          boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.5)',
+        }}
       >
         <motion.div
-          className="h-full rounded-full"
+          className="h-full rounded-full relative overflow-hidden"
           style={{
-            backgroundColor: color,
-            boxShadow: `0 0 8px ${color}99`,
+            background: `linear-gradient(90deg, ${color}bb, ${color}, ${color}dd)`,
+            boxShadow: `0 0 10px ${color}bb`,
           }}
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={animated ? { duration: 0.8, ease: 'easeOut' } : { duration: 0 }}
-        />
+        >
+          <div className="shimmer-overlay" />
+        </motion.div>
       </div>
     </div>
   );

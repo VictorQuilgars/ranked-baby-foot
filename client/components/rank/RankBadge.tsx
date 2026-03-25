@@ -15,10 +15,10 @@ interface RankBadgeProps {
 }
 
 const SIZE_CONFIG = {
-  sm:  { badge: 'w-8 h-8 text-xs',   glow: '10px', label: 'text-xs' },
-  md:  { badge: 'w-12 h-12 text-sm',  glow: '15px', label: 'text-sm' },
-  lg:  { badge: 'w-16 h-16 text-base',glow: '20px', label: 'text-base' },
-  xl:  { badge: 'w-24 h-24 text-xl',  glow: '30px', label: 'text-lg' },
+  sm:  { badge: 'w-9 h-9 text-base',   glow: '12px', label: 'text-xs' },
+  md:  { badge: 'w-14 h-14 text-xl',   glow: '18px', label: 'text-sm' },
+  lg:  { badge: 'w-20 h-20 text-3xl',  glow: '24px', label: 'text-base' },
+  xl:  { badge: 'w-28 h-28 text-5xl',  glow: '36px', label: 'text-lg' },
 };
 
 const RANK_EMBLEMS: Record<RankName, string> = {
@@ -56,16 +56,16 @@ export function RankBadge({
           isIridescent
             ? { animation: 'rank-shine 3s ease infinite' }
             : {
-                backgroundColor: `${color}22`,
-                border: `2px solid ${color}`,
-                boxShadow: `0 0 ${glow} ${color}66`,
+                background: `radial-gradient(circle at 35% 30%, ${color}66, ${color}18 70%)`,
+                border: `3px solid ${color}`,
+                boxShadow: `0 0 ${glow} ${color}77, inset 0 1px 0 ${color}99, 0 4px 12px rgba(0,0,0,0.4)`,
               }
         }
         animate={animated && !isIridescent ? {
           boxShadow: [
-            `0 0 ${glow} ${color}44`,
-            `0 0 ${glow} ${color}99`,
-            `0 0 ${glow} ${color}44`,
+            `0 0 ${glow} ${color}55, inset 0 1px 0 ${color}88, 0 4px 12px rgba(0,0,0,0.4)`,
+            `0 0 ${glow} ${color}cc, inset 0 1px 0 ${color}aa, 0 4px 12px rgba(0,0,0,0.4)`,
+            `0 0 ${glow} ${color}55, inset 0 1px 0 ${color}88, 0 4px 12px rgba(0,0,0,0.4)`,
           ],
         } : undefined}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -74,11 +74,28 @@ export function RankBadge({
           {isPlacement ? '?' : RANK_EMBLEMS[rank]}
         </span>
 
+        {/* Highlight interne (effet gemme) */}
+        {!isIridescent && (
+          <span
+            className="absolute top-1 left-1/2 -translate-x-1/2 rounded-full"
+            style={{
+              width: '45%',
+              height: '18%',
+              background: `linear-gradient(180deg, ${color}88 0%, transparent 100%)`,
+              filter: 'blur(2px)',
+            }}
+          />
+        )}
+
         {/* Tier badge (I/II/III) */}
         {!isIridescent && !isPlacement && (
           <span
-            className="absolute -bottom-1 -right-1 text-[10px] font-black px-1 rounded-md leading-none"
-            style={{ backgroundColor: color, color: '#1a1a2e' }}
+            className="absolute -bottom-1.5 -right-1.5 text-[10px] font-black px-1.5 py-0.5 rounded-lg leading-none"
+            style={{
+              background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+              color: '#1a1a2e',
+              boxShadow: `0 2px 0 ${color}66`,
+            }}
           >
             {['I', 'II', 'III'][tier - 1]}
           </span>

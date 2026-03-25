@@ -63,24 +63,117 @@ body {
     @apply bg-night-3/60 backdrop-blur-md border border-white/15 rounded-2xl;
   }
 
-  /* Bouton primaire style Clash Royale */
+  /* ── Boutons style Clash Royale (3D raised) ── */
+
+  /* Rouge — action principale */
+  .btn-cr-red {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ff5c70 0%, #e94560 55%, #d03050 100%);
+    box-shadow: 0 6px 0 #9e1e35, 0 10px 28px rgba(233,69,96,0.45);
+    color: #ffffff;
+    font-weight: 900;
+    text-decoration: none;
+    transition: transform 100ms ease, box-shadow 100ms ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-cr-red:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 #9e1e35, 0 4px 12px rgba(233,69,96,0.25);
+  }
+
+  /* Or — action secondaire premium */
+  .btn-cr-gold {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffd556 0%, #f5a623 55%, #d4881f 100%);
+    box-shadow: 0 6px 0 #9a6000, 0 10px 28px rgba(245,166,35,0.45);
+    color: #1a1a2e;
+    font-weight: 900;
+    text-decoration: none;
+    transition: transform 100ms ease, box-shadow 100ms ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-cr-gold:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 #9a6000, 0 4px 12px rgba(245,166,35,0.25);
+  }
+
+  /* Sombre — action secondaire */
+  .btn-cr-dark {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #243565 0%, #16213e 55%, #0e1828 100%);
+    box-shadow: 0 6px 0 #060e1c, 0 10px 28px rgba(0,0,0,0.5);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    color: #ffffff;
+    font-weight: 900;
+    text-decoration: none;
+    transition: transform 100ms ease, box-shadow 100ms ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-cr-dark:active {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 #060e1c, 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Compatibilité — anciens boutons */
   .btn-primary {
-    @apply bg-accent hover:bg-accent/90 active:scale-95 text-white font-bold py-3 px-6 rounded-xl
-           transition-all duration-150 shadow-lg active:shadow-none;
+    @apply bg-accent text-white font-bold py-3 px-6 rounded-xl transition-all duration-150;
+    box-shadow: 0 5px 0 #9e1e35;
+  }
+  .btn-primary:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #9e1e35;
   }
 
   .btn-secondary {
-    @apply bg-night-3 hover:bg-night-3/80 active:scale-95 text-white font-bold py-3 px-6 rounded-xl
-           transition-all duration-150 border border-white/10;
+    @apply bg-night-3 text-white font-bold py-3 px-6 rounded-xl transition-all duration-150 border border-white/10;
+    box-shadow: 0 5px 0 #060e1c;
+  }
+  .btn-secondary:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #060e1c;
   }
 
   .btn-gold {
-    @apply bg-gold-ui hover:bg-gold-ui/90 active:scale-95 text-night font-bold py-3 px-6 rounded-xl
-           transition-all duration-150 shadow-glow-gold;
+    @apply bg-gold-ui text-night font-bold py-3 px-6 rounded-xl transition-all duration-150;
+    box-shadow: 0 5px 0 #9a6000, 0 8px 20px rgba(245,166,35,0.4);
+  }
+  .btn-gold:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #9a6000;
   }
 
   /* Barre de navigation bas (safe area iOS) */
   .nav-bottom {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
+}
+
+/* Effet shimmer pour la barre SR */
+@keyframes sr-shimmer {
+  0%   { transform: translateX(-200%); }
+  100% { transform: translateX(200%); }
+}
+.shimmer-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.28) 50%, transparent 100%);
+  animation: sr-shimmer 2.8s ease-in-out infinite;
 }

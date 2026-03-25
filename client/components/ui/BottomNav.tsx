@@ -32,18 +32,20 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center gap-1 px-4 py-2 rounded-2xl transition-all duration-200',
-                isActive
-                  ? 'text-accent'
-                  : 'text-muted active:scale-90'
+                'flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl transition-all duration-200',
+                isActive ? 'text-accent' : 'text-muted active:scale-90'
               )}
+              style={isActive ? {
+                background: 'rgba(233,69,96,0.14)',
+                boxShadow: 'inset 0 1px 0 rgba(233,69,96,0.25)',
+              } : undefined}
             >
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.5 : 1.8}
-                className={cn(isActive && 'drop-shadow-[0_0_8px_rgba(233,69,96,0.8)]')}
+                className={cn(isActive && 'drop-shadow-[0_0_10px_rgba(233,69,96,0.9)]')}
               />
-              <span className={cn('text-[10px] font-semibold tracking-wide', isActive ? 'text-accent' : 'text-muted')}>
+              <span className={cn('text-[10px] font-black tracking-widest uppercase', isActive ? 'text-accent' : 'text-muted')}>
                 {label}
               </span>
             </Link>

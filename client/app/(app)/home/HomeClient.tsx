@@ -106,51 +106,37 @@ export function HomeClient({ player }: HomeClientProps) {
           ].map(({ label, value, color }) => (
             <div key={label} className="flex flex-col items-center gap-1">
               <span className="text-2xl font-black" style={{ color }}>{value}</span>
-              <span className="text-xs text-muted">{label}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted">{label}</span>
             </div>
           ))}
         </div>
       </motion.div>
 
       {/* Boutons d'action */}
-      <div className="px-5 mt-6 flex flex-col gap-3">
+      <div className="px-5 mt-6 flex flex-col gap-4">
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Link
-            href="/match/create"
-            className="flex items-center justify-between w-full py-4 px-5 rounded-2xl active:scale-95 transition-all duration-150"
-            style={{
-              background: 'linear-gradient(135deg, #e94560, #c73652)',
-              boxShadow: '0 8px 25px rgba(233, 69, 96, 0.4)',
-            }}
-          >
+          <Link href="/match/create" className="btn-cr-red">
             <div>
-              <p className="font-black text-white text-lg">Créer un match</p>
-              <p className="text-white/70 text-sm">Lance une partie officielle</p>
+              <p className="font-black text-white text-lg uppercase tracking-wide">Créer un match</p>
+              <p className="text-white/70 text-sm font-medium">Lance une partie officielle</p>
             </div>
             <Plus size={28} strokeWidth={2.5} className="text-white" />
           </Link>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Link
-            href="/match/join"
-            className="flex items-center justify-between w-full py-4 px-5 rounded-2xl active:scale-95 transition-all duration-150"
-            style={{
-              background: 'linear-gradient(135deg, #16213e, #0f3460)',
-              border: '1.5px solid rgba(255,255,255,0.1)',
-            }}
-          >
+          <Link href="/match/join" className="btn-cr-dark">
             <div>
-              <p className="font-black text-white text-lg">Rejoindre</p>
-              <p className="text-muted text-sm">Code ou QR code</p>
+              <p className="font-black text-white text-lg uppercase tracking-wide">Rejoindre</p>
+              <p className="text-muted text-sm font-medium">Code ou QR code</p>
             </div>
             <QrCode size={28} strokeWidth={1.8} className="text-muted" />
           </Link>
