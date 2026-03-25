@@ -93,7 +93,7 @@ router.get('/code/:code', async (req: Request, res: Response) => {
         players (id, username, avatar_url, rank, rank_tier, placement_matches_left)
       )
     `)
-    .eq('code', req.params.code.toUpperCase())
+    .eq('code', (req.params.code as string).toUpperCase())
     .single();
 
   if (error || !data) {
@@ -372,7 +372,7 @@ router.post('/:id/goal', requireAuth, validateBody(goalSchema), async (req: Requ
 
   // Si match terminé, calculer les SR
   if (data.status === 'finished') {
-    await finalizeSRCalculation(req.params.id, data.winner_team);
+    await finalizeSRCalculation(req.params.id as string, data.winner_team);
   }
 
   res.json({ data });
