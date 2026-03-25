@@ -89,11 +89,12 @@ export function RankBadge({
               alt={`${rank} ${tier}`}
               className="absolute inset-0 w-full h-full object-contain"
             />
-            {/* Vignette circulaire intérieure */}
+            {/* Vignette circulaire intérieure — fondu progressif */}
             <div
               className="absolute inset-0"
               style={{
-                background: 'radial-gradient(circle at center, transparent 42%, rgba(0,0,0,0.88) 100%)',
+                background: 'radial-gradient(circle at center, transparent 28%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.82) 72%, rgba(0,0,0,0.97) 100%)',
+                boxShadow: 'inset 0 0 40px 18px rgba(0,0,0,0.95)',
               }}
             />
           </>
