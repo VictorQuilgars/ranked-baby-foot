@@ -83,20 +83,15 @@ export function RankBadge({
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
       >
         {imageUrl ? (
-          <>
-            <img
-              src={imageUrl}
-              alt={`${rank} ${tier}`}
-              className="absolute inset-0 w-full h-full object-contain"
-            />
-            {/* Fondu circulaire — cache les coins rectangulaires sans toucher au centre */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(circle at center, transparent 58%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.95) 92%)',
-              }}
-            />
-          </>
+          <img
+            src={imageUrl}
+            alt={`${rank} ${tier}`}
+            className="absolute inset-0 w-full h-full object-contain"
+            style={{
+              maskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
+              WebkitMaskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
+            }}
+          />
         ) : (
           <>
             <span role="img" aria-label={rank}>
