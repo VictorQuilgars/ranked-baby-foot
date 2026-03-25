@@ -8,7 +8,7 @@
 
 **Ranked Baby Foot** est une application web mobile-first de classement pour les parties de baby-foot dans un établissement scolaire. Elle fonctionne comme un système de ranked inspiré de Call of Duty, avec une interface visuelle inspirée de Clash Royale.
 
-**Objectif** : permettre des parties officielles avec un système de progression de rang (Bronze → Légende) et un algorithme de points intelligent.
+**Objectif** : permettre des parties officielles avec un système de progression de rang (Bronze → Iridescent) et un algorithme de points intelligent.
 
 ---
 
@@ -56,7 +56,7 @@ ranked-baby-foot/
 │   ├── components/
 │   │   ├── ui/                      # Composants génériques (Button, Card, Modal...)
 │   │   ├── match/                   # Composants match (Lobby, ScoreBoard, GoalFeed...)
-│   │   ├── rank/                    # RankBadge, RPBar, RankUpAnimation
+│   │   ├── rank/                    # RankBadge, SRBar, RankUpAnimation
 │   │   ├── leaderboard/             # LeaderboardRow, Podium
 │   │   └── profile/                 # PlayerCard, StatsGrid, MatchHistory
 │   ├── hooks/
@@ -87,7 +87,7 @@ ranked-baby-foot/
 │       │   ├── auth.ts              # Vérification JWT Supabase (req.user)
 │       │   └── validation.ts        # Wrapper Zod pour les body/params
 │       ├── services/
-│       │   ├── rankService.ts       # ⭐ Algorithme de calcul des RP
+│       │   ├── rankService.ts       # ⭐ Algorithme de calcul des SR
 │       │   ├── matchService.ts      # Logique métier des matchs
 │       │   └── notificationService.ts  # Notifications Realtime
 │       ├── utils/
@@ -110,7 +110,7 @@ id              uuid PRIMARY KEY  -- = auth.users.id
 username        text UNIQUE NOT NULL
 avatar_url      text
 rank_points     integer DEFAULT 0
-rank            text DEFAULT 'Bronze'     -- Bronze/Argent/Or/Platine/Diamant/Champion/Legende
+rank            text DEFAULT 'Bronze'     -- Bronze/Silver/Gold/Platinum/Diamond/Crimson/Iridescent
 rank_tier       integer DEFAULT 1          -- 1, 2 ou 3
 hidden_mmr      integer DEFAULT 0          -- ⭐ Niveau réel estimé (jamais affiché au joueur)
 placement_matches_left integer DEFAULT 5  -- Matchs de placement restants (5 au total)
@@ -152,7 +152,7 @@ team            text NOT NULL              -- 'A' | 'B'
 position        text NOT NULL              -- 'attacker' | 'goalkeeper'
 goals_scored    integer DEFAULT 0
 is_mvp          boolean DEFAULT false
-rp_change       integer                    -- Null jusqu'à la fin du match
+sr_change       integer                    -- Null jusqu'à la fin du match
 joined_at       timestamptz DEFAULT now()
 UNIQUE(match_id, player_id)
 UNIQUE(match_id, team, position)          -- Max 1 attaquant + 1 gardien par équipe
@@ -223,23 +223,23 @@ Le `hidden_mmr` se met à jour immédiatement après chaque match, indépendamme
 
 | Écart `hidden_mmr - rank_points` | Effet | Signification |
 |----------------------------------|-------|---------------|
-| > 400 RP | **×2.0** | Très en dessous du vrai niveau → accélération forte |
-| 200 – 400 RP | **×1.5** | En dessous du vrai niveau → accélération modérée |
-| 50 – 200 RP | **×1.2** | Légèrement en dessous → léger coup de pouce |
-| -50 – +50 RP | **×1.0** | À son vrai niveau → progression normale |
-| < -50 RP | **×0.8** | Au-dessus du vrai niveau → le système freine |
+| > 400 SR | **×2.0** | Très en dessous du vrai niveau → accélération forte |
+| 200 – 400 SR | **×1.5** | En dessous du vrai niveau → accélération modérée |
+| 50 – 200 SR | **×1.2** | Légèrement en dessous → léger coup de pouce |
+| -50 – +50 SR | **×1.0** | À son vrai niveau → progression normale |
+| < -50 SR | **×0.8** | Au-dessus du vrai niveau → le système freine |
 
 > Exemple concret : un joueur très fort commence Bronze I. Son `hidden_mmr` est estimé à 800 (niveau Or) après ses placements. L'écart de 800 – 0 = 800 → ×2.0 : il gagne le double de RP à chaque victoire jusqu'à se rapprocher de son vrai rang.
 
 ---
 
-### 3. RP de Base
+### 3. SR de Base
 
 | Résultat | Points |
 |----------|--------|
-| Victoire | +25 RP |
-| Défaite  | -20 RP |
-| Égalité  | +5 RP  |
+| Victoire | +25 SR |
+| Défaite  | -20 SR |
+| Égalité  | +5 SR  |
 
 ---
 
@@ -255,7 +255,7 @@ Basé sur la différence entre le rang moyen de son équipe et celui de l'équip
 | -3 à -5 | ×0.85 | ×1.1 |
 | -6 ou moins | ×0.7 | ×1.25 |
 
-Valeur de rang : Bronze I = 0, Bronze II = 1, Bronze III = 2, Argent I = 3... Légende = 20
+Valeur de rang : Bronze I = 0, Bronze II = 1, Bronze III = 2, Silver I = 3... Iridescent = 20
 
 ---
 
@@ -286,7 +286,7 @@ Le joueur avec le plus haut `score_mvp` dans l'équipe gagnante est MVP.
 ---
 
 ### Règles Spéciales
-- Jamais en dessous de 0 RP total
+- Jamais en dessous de 0 SR total
 - **Bouclier de protection** : 3 matchs après une montée de rang (pas de descente possible)
 - **Première défaite du jour gratuite** : `daily_loss_forgiven` remis à `false` chaque nuit à minuit via une cron Supabase
 - **Déconnexion coéquipier** : si un joueur quitte en cours de match, la défaite ne compte pas pour ses coéquipiers
@@ -297,16 +297,17 @@ Le joueur avec le plus haut `score_mvp` dans l'équipe gagnante est MVP.
 ## Système de Rangs
 
 ```
-Bronze  I/II/III   :   0 –  299 RP
-Argent  I/II/III   : 300 –  699 RP
-Or      I/II/III   : 700 – 1199 RP
-Platine I/II/III   : 1200 – 1999 RP
-Diamant I/II/III   : 2000 – 2999 RP
-Champion           : 3000 – 4499 RP
-Légende            : 4500+ RP
+Bronze     I/II/III   :   0 –  299 SR
+Silver     I/II/III   : 300 –  699 SR
+Gold       I/II/III   : 700 – 1199 SR
+Platinum   I/II/III   : 1200 – 1999 SR
+Diamond    I/II/III   : 2000 – 2999 SR
+Crimson    I/II/III   : 3000 – 4499 SR
+Iridescent             : 4500+ SR
 ```
 
 Pour les rangs à paliers (I/II/III), le tier se calcule en divisant la plage du rang en 3 parties égales.
+Iridescent n'a pas de division.
 
 ---
 
@@ -336,7 +337,7 @@ Pour les rangs à paliers (I/II/III), le tier se calcule en divisant la plage du
 - Français pour les commentaires, anglais pour le code
 - `teamA` / `teamB` (pas `team1` / `team2`)
 - `goalScored` (pas `goal_scored`) dans le code TypeScript (snake_case réservé à SQL)
-- `rpChange` (pas `rankPointsChange`)
+- `srChange` (pas `skillRatingChange`)
 
 ### Supabase Realtime
 - Les subscriptions Realtime sont créées dans des hooks custom (`useMatch`, `useInvitations`)
@@ -407,13 +408,13 @@ Les tables suivantes ont Realtime activé :
 
 ### Couleurs des Rangs
 ```
-Bronze  : #cd7f32
-Argent  : #c0c0c0
-Or      : #ffd700
-Platine : #00b4d8
-Diamant : #7b2fff
-Champion: #ff6b35
-Légende : #ff0080
+Bronze     : #cd7f32
+Silver     : #c0c0c0
+Gold       : #ffd700
+Platinum   : #00b4d8
+Diamond    : #7b2fff
+Crimson    : #dc143c
+Iridescent : #ff00ff  /* gradient arc-en-ciel animé en prod */
 ```
 
 ### Principes UI
@@ -449,7 +450,7 @@ cd server && npm run build
 3. **Score sans arbitre** : système de vote à 3/4 joueurs avec timeout 30s côté serveur
 4. **iOS Safari** : tester l'auth OAuth Apple sur un vrai appareil (comportement différent du simulateur)
 5. **QR Code** : `html5-qrcode` nécessite HTTPS en production pour accéder à la caméra
-6. **Rang Légende** : pas de tier (I/II/III), afficher juste "Légende"
+6. **Rang Iridescent** : pas de tier (I/II/III), afficher juste "Iridescent" — prévoir un effet gradient arc-en-ciel animé
 
 ---
 

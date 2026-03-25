@@ -63,21 +63,21 @@ ranked-baby-foot/
   - `match_players` : lecture publique, insertion via server-side uniquement
   - `match_events` : lecture publique, insertion via arbitre ou validation joueurs
 - [ ] Activer **Supabase Realtime** sur les tables `matches`, `match_players`, `match_events`
-- [ ] Créer les fonctions SQL utilitaires (calcul de rang depuis les RP)
+- [ ] Créer les fonctions SQL utilitaires (calcul de rang depuis les SR)
 
 ### 1.3 Scripts SQL
 
 ```sql
--- Fonction pour obtenir le rang depuis les RP
-CREATE OR REPLACE FUNCTION get_rank_from_rp(rp integer)
+-- Fonction pour obtenir le rang depuis les SR
+CREATE OR REPLACE FUNCTION get_rank_from_sr(sr integer)
 RETURNS text AS $$
 BEGIN
-  IF rp >= 4500 THEN RETURN 'Legende';
-  ELSIF rp >= 3000 THEN RETURN 'Champion';
-  ELSIF rp >= 2000 THEN RETURN 'Diamant';
-  ELSIF rp >= 1200 THEN RETURN 'Platine';
-  ELSIF rp >= 700 THEN RETURN 'Or';
-  ELSIF rp >= 300 THEN RETURN 'Argent';
+  IF sr >= 4500 THEN RETURN 'Iridescent';
+  ELSIF sr >= 3000 THEN RETURN 'Crimson';
+  ELSIF sr >= 2000 THEN RETURN 'Diamond';
+  ELSIF sr >= 1200 THEN RETURN 'Platinum';
+  ELSIF sr >= 700 THEN RETURN 'Gold';
+  ELSIF sr >= 300 THEN RETURN 'Silver';
   ELSE RETURN 'Bronze';
   END IF;
 END;
@@ -87,7 +87,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_player_rank()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.rank := get_rank_from_rp(NEW.rank_points);
+  NEW.rank := get_rank_from_sr(NEW.rank_points);
   -- Calcul du tier (I, II, III) selon la position dans le palier
   -- [logique détaillée à implémenter dans rankService]
   RETURN NEW;
@@ -221,7 +221,7 @@ GET  /api/matches/:id/events        → Liste des événements du match
 - [ ] Scores finaux
 - [ ] Détail des buts par joueur
 - [ ] MVP mis en avant avec couronne animée
-- [ ] Points gagnés/perdus pour chaque joueur (+25 RP, -18 RP…) avec animation compteur
+- [ ] Points gagnés/perdus pour chaque joueur (+25 SR, -18 SR…) avec animation compteur
 - [ ] Si montée de rang : animation de rang up spéciale
 - [ ] Bouton "Retour à l'accueil"
 
@@ -248,7 +248,7 @@ interface PlayerMatchData {
   team: 'A' | 'B';
   position: 'attacker' | 'goalkeeper';
   goalsScored: number;
-  currentRP: number;
+  currentSR: number;
   currentRank: string;
   currentTier: number;
   hiddenMmr: number;          // HPR : niveau réel estimé
@@ -257,7 +257,7 @@ interface PlayerMatchData {
   dailyLossForgiven: boolean;  // Première défaite du jour déjà utilisée
 }
 
-export function calculateRPChanges(result: MatchResult): RPChange[] {
+export function calculateSRChanges(result: MatchResult): SRChange[] {
   // 1. Identifier les joueurs en placement (placementMatchesLeft > 0)
   // 2. Calculer le rang moyen de chaque équipe (getRankValue)
   // 3. Calculer le modificateur adversaires (rankDiff)
@@ -273,7 +273,7 @@ export function calculateRPChanges(result: MatchResult): RPChange[] {
 **Calcul du Rang Moyen**
 ```typescript
 function getRankValue(rank: string, tier: number): number {
-  const rankValues = { Bronze: 0, Argent: 1, Or: 2, Platine: 3, Diamant: 4, Champion: 5, Legende: 6 };
+  const rankValues = { Bronze: 0, Silver: 1, Gold: 2, Platinum: 3, Diamond: 4, Crimson: 5, Iridescent: 6 };
   return rankValues[rank] * 3 + (tier - 1); // Valeur de 0 à 20
 }
 ```
@@ -312,13 +312,13 @@ function getHprModifier(hiddenMmr: number, rankPoints: number, isPlacement: bool
 Après calcul, le serveur met à jour **en transaction atomique** :
 - `players.rank_points` ± delta
 - `players.hidden_mmr` (mise à jour selon la formule Elo)
-- `players.rank` et `players.rank_tier` (recalculés depuis les nouveaux RP)
+- `players.rank` et `players.rank_tier` (recalculés depuis les nouveaux SR)
 - `players.placement_matches_left` (décrémenté si > 0)
 - `players.rank_shield` (décrémenté si > 0, ou remis à 3 en cas de montée de rang)
 - `players.daily_loss_forgiven` (mis à `true` si la protection a été utilisée)
 - `players.total_games`, `players.wins` / `losses`
 - `players.goals_scored`, `players.mvp_count`
-- `match_players.rp_change` et `match_players.is_mvp`
+- `match_players.sr_change` et `match_players.is_mvp`
 
 ### 5.5 Cron Job — Reset Quotidien
 
@@ -345,7 +345,7 @@ SELECT cron.schedule(
 - [ ] Test loss forgiveness jour 1 → pas de perte
 - [ ] Test loss forgiveness jour 2 → perte normale
 - [ ] Test bouclier post-montée → pas de descente sur 3 matchs
-- [ ] Test limite max/min RP (+50 / -35)
+- [ ] Test limite max/min SR (+50 / -35)
 - [ ] Test montée de rang automatique
 
 ---
@@ -362,21 +362,23 @@ colors: {
   'night': '#1a1a2e',
   'night-2': '#16213e',
   'night-3': '#0f3460',
-  'crimson': '#e94560',
-  'gold': '#f5a623',
-  'silver': '#c0c0c0',
-  'bronze': '#cd7f32',
-  'platinum': '#00b4d8',
-  'diamond': '#7b2fff',
-  'champion': '#ff6b35',
-  'legend': '#ff0080',
+  'accent': '#e94560',
+  'gold-ui': '#f5a623',
+  // Couleurs de rangs
+  'rank-bronze': '#cd7f32',
+  'rank-silver': '#c0c0c0',
+  'rank-gold': '#ffd700',
+  'rank-platinum': '#00b4d8',
+  'rank-diamond': '#7b2fff',
+  'rank-crimson': '#dc143c',
+  'rank-iridescent': '#ff00ff', // gradient arc-en-ciel animé en prod
 }
 ```
 
 **Composants UI à créer**
 - [ ] `<Card />` : carte générique avec effet glassmorphism et bordure lumineuse
 - [ ] `<RankBadge />` : badge animé (pulsation + glow selon rang)
-- [ ] `<RPBar />` : barre de progression RP avec animation de remplissage
+- [ ] `<SRBar />` : barre de progression SR avec animation de remplissage
 - [ ] `<PlayerCard />` : carte joueur style Clash Royale (avatar, pseudo, rang)
 - [ ] `<MatchCard />` : carte de match dans le feed (score, rangs, résultat)
 - [ ] `<Button />` : bouton avec variantes (primary/secondary/danger) et animations

@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables CSS globales */
+:root {
+  --color-bg-primary: #1a1a2e;
+  --color-bg-secondary: #16213e;
+  --color-bg-tertiary: #0f3460;
+  --color-accent: #e94560;
+  --color-gold: #f5a623;
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Reset de base */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--color-bg-primary);
+  color: #ffffff;
+  font-family: var(--font-display), system-ui, sans-serif;
+  /* Safe area iOS */
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-tertiary);
+  border-radius: 2px;
+}
+
+/* Tap highlight désactivé (mobile) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Sélection */
+::selection {
+  background-color: rgba(233, 69, 96, 0.3);
+  color: #fff;
+}
+
+/* Glassmorphism card */
+@layer components {
+  .glass-card {
+    @apply bg-night-2/80 backdrop-blur-md border border-white/10 rounded-2xl;
+  }
+
+  .glass-card-elevated {
+    @apply bg-night-3/60 backdrop-blur-md border border-white/15 rounded-2xl;
+  }
+
+  /* Bouton primaire style Clash Royale */
+  .btn-primary {
+    @apply bg-accent hover:bg-accent/90 active:scale-95 text-white font-bold py-3 px-6 rounded-xl
+           transition-all duration-150 shadow-lg active:shadow-none;
+  }
+
+  .btn-secondary {
+    @apply bg-night-3 hover:bg-night-3/80 active:scale-95 text-white font-bold py-3 px-6 rounded-xl
+           transition-all duration-150 border border-white/10;
+  }
+
+  .btn-gold {
+    @apply bg-gold-ui hover:bg-gold-ui/90 active:scale-95 text-night font-bold py-3 px-6 rounded-xl
+           transition-all duration-150 shadow-glow-gold;
+  }
+
+  /* Barre de navigation bas (safe area iOS) */
+  .nav-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
