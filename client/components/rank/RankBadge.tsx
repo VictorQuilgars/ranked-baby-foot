@@ -89,7 +89,7 @@ export function RankBadge({
             className="absolute inset-0 w-full h-full object-contain"
             style={{
               maskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
-              WebkitMaskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
+              WebkitMaskImage: 'radial-gradient(circle, black 58%, transparent 78%)',
             }}
           />
         ) : (
