@@ -21,91 +21,79 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-night flex flex-col items-center justify-between py-16 px-6"
-      style={{
-        background: 'radial-gradient(ellipse at top, #0f3460 0%, #1a1a2e 60%)',
-      }}
+    <main
+      className="min-h-screen flex flex-col items-center justify-between py-14 px-6 relative overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #080c18 0%, #0d111e 50%, #0a0e1a 100%)' }}
     >
-      {/* Logo + titre */}
+      {/* Glow d'ambiance */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{
+          width: '600px',
+          height: '400px',
+          background: 'radial-gradient(ellipse, rgba(233,69,96,0.18) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+      />
+
+      {/* ── Section Logo + Titre ── */}
       <motion.div
-        className="flex flex-col items-center gap-5 mt-8"
+        className="flex flex-col items-center gap-6 w-full mt-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <motion.div
-          className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl"
+        {/* Zone logo — remplacer l'img src quand le logo est prêt */}
+        <div
+          className="w-32 h-32 rounded-3xl flex items-center justify-center overflow-hidden"
           style={{
-            background: 'radial-gradient(circle at 35% 30%, rgba(233,69,96,0.5), rgba(15,52,96,0.8))',
-            border: '3px solid rgba(233,69,96,0.6)',
-            boxShadow: '0 0 40px rgba(233,69,96,0.35), 0 8px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(233,69,96,0.5)',
+            background: 'radial-gradient(circle at 35% 30%, rgba(233,69,96,0.35), rgba(10,14,26,0.9))',
+            border: '2px solid rgba(233,69,96,0.3)',
+            boxShadow: '0 0 50px rgba(233,69,96,0.2), 0 8px 0 rgba(0,0,0,0.5)',
           }}
-          animate={{ rotate: [0, -5, 5, -3, 3, 0] }}
-          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
         >
-          ⚽
-        </motion.div>
-        <div className="flex flex-col items-center gap-1">
-          <h1 className="text-4xl font-black text-white tracking-tight text-center leading-none">
+          {/* Remplace ce bloc par <img src="/logo.png" ... /> quand tu as le logo */}
+          <span className="text-6xl">⚽</span>
+        </div>
+
+        {/* Titre */}
+        <div className="flex flex-col items-center gap-2 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted">
+            ★ Saison compétitive ★
+          </p>
+          <h1 className="text-5xl font-black text-white leading-none tracking-tight">
             RANKED
           </h1>
           <h1
-            className="text-5xl font-black tracking-tight text-center leading-none"
+            className="text-6xl font-black leading-none tracking-tight"
             style={{
-              background: 'linear-gradient(135deg, #ff5c70, #e94560)',
+              background: 'linear-gradient(135deg, #ff6b7a 0%, #e94560 50%, #c73652 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              textShadow: 'none',
-              filter: 'drop-shadow(0 0 20px rgba(233,69,96,0.5))',
+              filter: 'drop-shadow(0 0 24px rgba(233,69,96,0.55))',
             }}
           >
             BABY FOOT
           </h1>
         </div>
-        <p className="text-muted text-sm text-center font-semibold tracking-wide uppercase">
-          Grimpe dans les rangs. Prouve ta valeur.
+      </motion.div>
+
+      {/* ── Texte accrocheur ── */}
+      <motion.div
+        className="flex flex-col items-center gap-3 text-center px-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+      >
+        <p className="text-xl font-black text-white leading-snug">
+          Grimpe dans les rangs.<br />Prouve ta valeur.
+        </p>
+        <p className="text-sm text-muted max-w-xs leading-relaxed">
+          Système de classement compétitif — chaque match compte. Du Bronze à l'Iridescent, ta progression ne ment pas.
         </p>
       </motion.div>
 
-      {/* Rangs preview (décoratif) */}
-      <motion.div
-        className="flex gap-3 items-end"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-      >
-        {[
-          { emoji: '🥉', color: '#cd7f32', label: 'Bronze', delay: 0, size: 'w-11 h-11 text-2xl' },
-          { emoji: '💠', color: '#00b4d8', label: 'Platine', delay: 0.1, size: 'w-12 h-12 text-2xl' },
-          { emoji: '💎', color: '#7b2fff', label: 'Diamond', delay: 0.2, size: 'w-14 h-14 text-3xl' },
-          { emoji: '🔴', color: '#dc143c', label: 'Crimson', delay: 0.3, size: 'w-12 h-12 text-2xl' },
-          { emoji: '✨', color: '#ff00ff', label: 'Iridescent', delay: 0.4, size: 'w-11 h-11 text-2xl' },
-        ].map(({ emoji, color, label, delay, size }) => (
-          <motion.div
-            key={label}
-            className="flex flex-col items-center gap-1.5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + delay, duration: 0.4 }}
-          >
-            <div
-              className={`${size} rounded-2xl flex items-center justify-center relative`}
-              style={{
-                background: `radial-gradient(circle at 35% 30%, ${color}55, ${color}15)`,
-                border: `2.5px solid ${color}`,
-                boxShadow: `0 0 18px ${color}55, 0 4px 0 rgba(0,0,0,0.4), inset 0 1px 0 ${color}77`,
-              }}
-            >
-              {emoji}
-            </div>
-            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color }}>
-              {label}
-            </span>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Boutons de connexion */}
+      {/* ── Boutons de connexion ── */}
       <motion.div
         className="w-full flex flex-col gap-3 max-w-sm"
         initial={{ opacity: 0, y: 30 }}
