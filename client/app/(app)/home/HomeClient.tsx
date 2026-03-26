@@ -51,28 +51,8 @@ export function HomeClient({ player }: HomeClientProps) {
         style={{ background: `linear-gradient(90deg, transparent, ${rankColor}55, transparent)` }}
       />
 
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-between px-5 pt-12 pb-2">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted">Bienvenue,</p>
-          <h2 className="text-2xl font-black text-white leading-tight">{player.username}</h2>
-        </div>
-        {player.avatar_url ? (
-          <img
-            src={player.avatar_url}
-            alt={player.username}
-            className="w-11 h-11 rounded-full border-2"
-            style={{ borderColor: `${rankColor}88` }}
-          />
-        ) : (
-          <div
-            className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-black text-white"
-            style={{ background: `${rankColor}33`, border: `2px solid ${rankColor}66` }}
-          >
-            {player.username[0].toUpperCase()}
-          </div>
-        )}
-      </div>
+      {/* Header minimal — safe area iOS */}
+      <div className="relative z-10 pt-12" />
 
       {/* Zone centrale — Blason héro */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-6 px-5">
