@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Copy, LogOut, Play, Shield, Swords, Users } from 'lucide-react';
+import { Copy, LogOut, Play, Shield, Star, Swords, Trophy, Users } from 'lucide-react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { apiRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
@@ -41,8 +41,10 @@ export type MatchLobby = {
   score_target: number;
   score_team_a: number;
   score_team_b: number;
+  winner_team: string | null;
   created_at: string;
   started_at: string | null;
+  finished_at: string | null;
   match_players: LobbyPlayer[];
 };
 
@@ -58,36 +60,77 @@ const SLOT_ORDER: Array<{ team: Team; position: Position; label: string; accent:
   { team: 'B', position: 'goalkeeper', label: 'B · Gardien', accent: '#e94560' },
 ];
 
+const TEAM_ACCENT: Record<Team, string> = { A: '#00b4d8', B: '#e94560' };
+
 async function getAccessToken() {
   const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
+  const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? null;
 }
 
-export function MatchLobbyClient({ match, currentUserId }: MatchLobbyClientProps) {
+export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLobbyClientProps) {
   const router = useRouter();
+  const [match, setMatch] = useState<MatchLobby>(initialMatch);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const currentPlayer = match.match_players.find((entry) => entry.player_id === currentUserId) ?? null;
+  // Sync server data after router.refresh()
+  useEffect(() => {
+    setMatch(initialMatch);
+  }, [initialMatch]);
+
+  // Realtime subscription
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`match-${initialMatch.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'matches',
+        filter: `id=eq.${initialMatch.id}`,
+      }, (payload) => {
+        setMatch(prev => ({
+          ...prev,
+          status: payload.new.status,
+          score_team_a: payload.new.score_team_a,
+          score_team_b: payload.new.score_team_b,
+          winner_team: payload.new.winner_team ?? null,
+          finished_at: payload.new.finished_at ?? null,
+        }));
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'match_players',
+        filter: `match_id=eq.${initialMatch.id}`,
+      }, () => {
+        router.refresh();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [initialMatch.id, router]);
+
+  const currentPlayer = match.match_players.find((e) => e.player_id === currentUserId) ?? null;
   const isHost = match.host_id === currentUserId;
-  const isLobby = match.status === 'lobby';
-  const canStart = isHost && isLobby && match.match_players.length === 4;
+  const canStart = isHost && match.status === 'lobby' && match.match_players.length === 4;
+  const canRecordGoal = match.status === 'in_progress' &&
+    (!match.referee_id || match.referee_id === currentUserId);
+
+  const teamAPlayers = match.match_players.filter((p) => p.team === 'A');
+  const teamBPlayers = match.match_players.filter((p) => p.team === 'B');
 
   function handleAction(action: () => Promise<void>) {
     setError(null);
     setFeedback(null);
-
     startTransition(async () => {
       try {
         await action();
         router.refresh();
-      } catch (actionError) {
-        setError(actionError instanceof Error ? actionError.message : 'Action impossible');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Action impossible');
       }
     });
   }
@@ -95,48 +138,32 @@ export function MatchLobbyClient({ match, currentUserId }: MatchLobbyClientProps
   function joinSlot(team: Team, position: Position) {
     handleAction(async () => {
       const token = await getAccessToken();
-
-      if (!token) {
-        throw new Error('Session introuvable, reconnecte-toi.');
-      }
-
-      await apiRequest(`/api/matches/${match.id}/join`, {
-        method: 'POST',
-        token,
-        body: { team, position },
-      });
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/join`, { method: 'POST', token, body: { team, position } });
     });
   }
 
   function leaveMatch() {
     handleAction(async () => {
       const token = await getAccessToken();
-
-      if (!token) {
-        throw new Error('Session introuvable, reconnecte-toi.');
-      }
-
-      await apiRequest(`/api/matches/${match.id}/leave`, {
-        method: 'POST',
-        token,
-      });
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/leave`, { method: 'POST', token });
     });
   }
 
   function startMatch() {
     handleAction(async () => {
       const token = await getAccessToken();
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/start`, { method: 'POST', token });
+    });
+  }
 
-      if (!token) {
-        throw new Error('Session introuvable, reconnecte-toi.');
-      }
-
-      await apiRequest(`/api/matches/${match.id}/start`, {
-        method: 'POST',
-        token,
-      });
-
-      setFeedback('Match démarré. L’interface de score arrive au prochain lot.');
+  function recordGoal(team: Team) {
+    handleAction(async () => {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/goal`, { method: 'POST', token, body: { team } });
     });
   }
 
@@ -149,6 +176,327 @@ export function MatchLobbyClient({ match, currentUserId }: MatchLobbyClientProps
       setError('Impossible de copier le code.');
     }
   }
+
+  // ─── FINISHED VIEW ─────────────────────────────────────────────────────────
+  if (match.status === 'finished') {
+    const isDraw = match.winner_team === 'draw';
+    const winner = match.winner_team as Team | 'draw' | null;
+    const winnerAccent = !isDraw && winner && winner !== 'draw' ? TEAM_ACCENT[winner as Team] : '#f5a623';
+
+    return (
+      <div
+        className="min-h-screen flex flex-col pb-28 relative overflow-hidden"
+        style={{ background: '#0d111e' }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse 80% 45% at 50% 15%, ${winnerAccent}20 0%, transparent 70%)`,
+          }}
+        />
+
+        <div className="relative z-10 px-5 pt-10 flex flex-col gap-4">
+          {/* Winner banner */}
+          <motion.div
+            className="rounded-[28px] p-6 text-center"
+            style={{
+              background: `linear-gradient(145deg, ${winnerAccent}18, ${winnerAccent}06)`,
+              border: `1px solid ${winnerAccent}44`,
+            }}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <Trophy size={36} style={{ color: winnerAccent }} className="mx-auto mb-3" />
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-2" style={{ color: `${winnerAccent}99` }}>
+              Résultat final
+            </p>
+            <h1 className="text-2xl font-black text-white uppercase tracking-wide mb-1">
+              {isDraw ? 'Match nul' : `Victoire Équipe ${winner}`}
+            </h1>
+            <p className="text-5xl font-black mt-3" style={{ color: winnerAccent }}>
+              {match.score_team_a} — {match.score_team_b}
+            </p>
+          </motion.div>
+
+          {/* SR Results */}
+          <motion.div
+            className="rounded-[28px] p-5"
+            style={{
+              background: 'rgba(22,33,62,0.9)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+          >
+            <h2 className="text-[10px] font-black uppercase tracking-[0.35em] text-muted mb-4">Résultats SR</h2>
+
+            {(['A', 'B'] as Team[]).map((team) => {
+              const players = team === 'A' ? teamAPlayers : teamBPlayers;
+              const accent = TEAM_ACCENT[team];
+              const isWinner = !isDraw && winner === team;
+              return (
+                <div key={team} className="mb-4 last:mb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accent}44, transparent)` }} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: accent }}>
+                      Équipe {team}{isWinner ? ' · Vainqueur' : ''}
+                    </span>
+                    <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, transparent, ${accent}44)` }} />
+                  </div>
+                  {players.map((entry) => {
+                    const p = entry.players;
+                    const delta = entry.sr_change;
+                    return (
+                      <div
+                        key={entry.player_id}
+                        className="flex items-center gap-3 py-3 border-b last:border-b-0"
+                        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+                      >
+                        {p ? (
+                          <RankBadge
+                            rank={p.rank}
+                            tier={p.rank_tier}
+                            size="sm"
+                            showLabel={false}
+                            isPlacement={p.placement_matches_left > 0}
+                            animated={false}
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-2xl bg-white/5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-black text-white text-sm truncate">{p?.username ?? '—'}</p>
+                            {entry.is_mvp && (
+                              <span
+                                className="flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wide"
+                                style={{ color: '#f5a623' }}
+                              >
+                                <Star size={10} fill="#f5a623" />MVP
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted">
+                            {entry.position === 'attacker' ? 'Attaquant' : 'Gardien'} · {entry.goals_scored} but{entry.goals_scored !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {delta !== null ? (
+                            <p
+                              className="text-sm font-black"
+                              style={{ color: delta >= 0 ? '#4ade80' : '#f87171' }}
+                            >
+                              {delta >= 0 ? '+' : ''}{delta} SR
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted">Calcul…</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </motion.div>
+
+          {/* Back button */}
+          <motion.button
+            onClick={() => router.push('/home')}
+            className="btn-cr-dark justify-center"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.4 }}
+          >
+            Retour à l'accueil
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── IN-PROGRESS VIEW ──────────────────────────────────────────────────────
+  if (match.status === 'in_progress') {
+    return (
+      <div
+        className="min-h-screen flex flex-col pb-28 relative overflow-hidden"
+        style={{ background: '#0d111e' }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 70% 40% at 25% 10%, #00b4d820 0%, transparent 60%), radial-gradient(ellipse 70% 40% at 75% 10%, #e9456020 0%, transparent 60%)',
+          }}
+        />
+
+        <div className="relative z-10 px-5 pt-8 flex flex-col gap-5">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p
+                className="text-[10px] font-black uppercase tracking-[0.45em]"
+                style={{ color: '#e94560aa' }}
+              >
+                ★ En cours ★
+              </p>
+              <h1 className="text-lg font-black text-white mt-0.5">
+                {match.name ?? `Match ${match.code}`}
+              </h1>
+            </div>
+            <button
+              type="button"
+              onClick={copyCode}
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-bold text-white"
+            >
+              <Copy size={14} />
+              {match.code}
+            </button>
+          </div>
+
+          {/* Score board */}
+          <motion.div
+            className="rounded-[32px] p-6"
+            style={{
+              background: 'linear-gradient(145deg, rgba(22,33,62,0.96), rgba(15,52,96,0.9))',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.35)',
+            }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              {/* Team A */}
+              <div className="flex-1 text-center">
+                <p
+                  className="text-[10px] font-black uppercase tracking-[0.35em] mb-2"
+                  style={{ color: '#00b4d8' }}
+                >
+                  Équipe A
+                </p>
+                <motion.p
+                  key={match.score_team_a}
+                  className="text-7xl font-black leading-none"
+                  style={{ color: '#00b4d8', filter: 'drop-shadow(0 0 20px #00b4d880)' }}
+                  initial={{ scale: 1.4 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  {match.score_team_a}
+                </motion.p>
+                <div className="mt-2 space-y-0.5">
+                  {teamAPlayers.map((entry) => (
+                    <p key={entry.player_id} className="text-xs text-muted truncate">
+                      {entry.players?.username ?? '—'}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <p className="text-2xl font-black text-white/20">vs</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted">
+                  /{match.score_target}
+                </p>
+              </div>
+
+              {/* Team B */}
+              <div className="flex-1 text-center">
+                <p
+                  className="text-[10px] font-black uppercase tracking-[0.35em] mb-2"
+                  style={{ color: '#e94560' }}
+                >
+                  Équipe B
+                </p>
+                <motion.p
+                  key={match.score_team_b}
+                  className="text-7xl font-black leading-none"
+                  style={{ color: '#e94560', filter: 'drop-shadow(0 0 20px #e9456080)' }}
+                  initial={{ scale: 1.4 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  {match.score_team_b}
+                </motion.p>
+                <div className="mt-2 space-y-0.5">
+                  {teamBPlayers.map((entry) => (
+                    <p key={entry.player_id} className="text-xs text-muted truncate">
+                      {entry.players?.username ?? '—'}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress bars */}
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              {(['A', 'B'] as Team[]).map((team) => {
+                const score = team === 'A' ? match.score_team_a : match.score_team_b;
+                const pct = Math.min(100, (score / match.score_target) * 100);
+                const accent = TEAM_ACCENT[team];
+                return (
+                  <div key={team} className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: accent }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          {/* Goal buttons */}
+          {canRecordGoal ? (
+            <motion.div
+              className="grid grid-cols-2 gap-3"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              {(['A', 'B'] as Team[]).map((team) => {
+                const accent = TEAM_ACCENT[team];
+                const darkAccent = team === 'A' ? '#006e85' : '#9e1e35';
+                return (
+                  <button
+                    key={team}
+                    type="button"
+                    onClick={() => recordGoal(team)}
+                    disabled={isPending}
+                    className="flex flex-col items-center justify-center rounded-[24px] py-5 font-black text-white transition-all active:scale-95 disabled:opacity-50"
+                    style={{
+                      background: `linear-gradient(145deg, ${accent}, ${accent}cc)`,
+                      boxShadow: `0 6px 0 ${darkAccent}`,
+                    }}
+                  >
+                    <span className="text-3xl leading-none mb-1">+</span>
+                    <span className="text-xs uppercase tracking-[0.3em]">But {team}</span>
+                  </button>
+                );
+              })}
+            </motion.div>
+          ) : (
+            <p className="text-sm text-muted text-center">
+              {match.referee_id
+                ? "Seul l'arbitre peut enregistrer les buts."
+                : 'En attente d'un but…'}
+            </p>
+          )}
+
+          {feedback && <p className="text-sm font-medium text-green-400 text-center">{feedback}</p>}
+          {error && <p className="text-sm font-medium text-red-400 text-center">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── LOBBY VIEW ─────────────────────────────────────────────────────────────
+  const isLobby = match.status === 'lobby';
 
   return (
     <div
@@ -176,7 +524,7 @@ export function MatchLobbyClient({ match, currentUserId }: MatchLobbyClientProps
               {match.name ?? `Lobby ${match.code}`}
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Statut: <span className="font-bold text-white">{match.status === 'lobby' ? 'Lobby' : match.status === 'in_progress' ? 'En cours' : 'Terminé'}</span>
+              Statut: <span className="font-bold text-white">{isLobby ? 'Lobby' : 'En cours'}</span>
             </p>
           </div>
 
@@ -347,7 +695,7 @@ export function MatchLobbyClient({ match, currentUserId }: MatchLobbyClientProps
                       </button>
                     ) : (
                       <p className="mt-3 text-xs text-muted">
-                        {currentPlayer ? 'Quitte d’abord ton slot actuel pour changer.' : 'Le match doit être en lobby pour rejoindre.'}
+                        {currentPlayer ? 'Quitte d'abord ton slot actuel pour changer.' : 'Le match doit être en lobby pour rejoindre.'}
                       </p>
                     )}
                   </div>
@@ -357,24 +705,6 @@ export function MatchLobbyClient({ match, currentUserId }: MatchLobbyClientProps
           })}
         </div>
       </motion.section>
-
-      {match.status !== 'lobby' ? (
-        <motion.section
-          className="mt-5 rounded-[32px] p-5"
-          style={{
-            background: 'linear-gradient(180deg, rgba(12,18,33,0.98), rgba(22,33,62,0.9))',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.4 }}
-        >
-          <h2 className="text-lg font-black text-white">Suite du match</h2>
-          <p className="mt-2 text-sm text-muted">
-            Le lobby est prêt. L’interface de score et d’arbitrage sera livrée dans le prochain lot.
-          </p>
-        </motion.section>
-      ) : null}
     </div>
   );
 }

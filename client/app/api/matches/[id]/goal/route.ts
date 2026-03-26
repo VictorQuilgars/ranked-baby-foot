@@ -15,7 +15,7 @@ async function finalizeSRCalculation(matchId: string, winnerTeam: string) {
 
   const { data: matchPlayers } = await supabase
     .from('match_players')
-    .select('player_id, team, position, goals_scored, players (rank_points, rank, rank_tier, hidden_mmr, placement_matches_left, rank_shield, daily_loss_forgiven)')
+    .select('player_id, team, position, goals_scored, players (rank_points, rank, rank_tier, hidden_mmr, placement_matches_left, rank_shield, daily_loss_forgiven, total_games, wins, losses)')
     .eq('match_id', matchId);
 
   if (!matchPlayers || matchPlayers.length === 0) return;
@@ -40,11 +40,24 @@ async function finalizeSRCalculation(matchId: string, winnerTeam: string) {
     };
   });
 
+  const statsMap = new Map(
+    matchPlayers.map((mp: Record<string, unknown>) => {
+      const p = mp.players as Record<string, unknown>;
+      return [mp.player_id as string, {
+        totalGames: ((p.total_games as number) ?? 0),
+        wins: ((p.wins as number) ?? 0),
+        losses: ((p.losses as number) ?? 0),
+      }];
+    })
+  );
+
   const srChanges = calculateSRChanges(players, match.score_team_a, match.score_team_b, winnerTeam as 'A' | 'B' | 'draw');
 
   await Promise.all(srChanges.map(async (change) => {
     const player = players.find(p => p.playerId === change.playerId)!;
+    const stats = statsMap.get(change.playerId) ?? { totalGames: 0, wins: 0, losses: 0 };
     const won = winnerTeam !== 'draw' && player.team === winnerTeam;
+    const lost = winnerTeam !== 'draw' && player.team !== winnerTeam;
     const newPlacementLeft = Math.max(0, player.placementMatchesLeft - 1);
     const newShield = change.rankUp ? 3 : change.shieldUsed ? Math.max(0, player.rankShield - 1) : player.rankShield;
 
@@ -56,17 +69,10 @@ async function finalizeSRCalculation(matchId: string, winnerTeam: string) {
       placement_matches_left: newPlacementLeft,
       rank_shield: newShield,
       daily_loss_forgiven: change.lossForgivenUsed ? true : player.dailyLossForgiven,
-      total_games: supabase.rpc as unknown as number, // will use increment below
-      wins: won ? supabase.rpc as unknown as number : undefined,
-      losses: !won && winnerTeam !== 'draw' ? supabase.rpc as unknown as number : undefined,
+      total_games: stats.totalGames + 1,
+      wins: won ? stats.wins + 1 : stats.wins,
+      losses: lost ? stats.losses + 1 : stats.losses,
     }).eq('id', change.playerId);
-
-    // Increment counters properly
-    await supabase.rpc('increment_player_stats', {
-      p_id: change.playerId,
-      p_won: won,
-      p_draw: winnerTeam === 'draw',
-    });
 
     await supabase.from('match_players').update({ sr_change: change.delta, is_mvp: change.isMvp }).eq('match_id', matchId).eq('player_id', change.playerId);
   }));
