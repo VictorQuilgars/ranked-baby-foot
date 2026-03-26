@@ -484,7 +484,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
             <p className="text-sm text-muted text-center">
               {match.referee_id
                 ? "Seul l'arbitre peut enregistrer les buts."
-                : 'En attente d'un but…'}
+                : "En attente d'un but…"}
             </p>
           )}
 
