@@ -51,11 +51,8 @@ export function HomeClient({ player }: HomeClientProps) {
         style={{ background: `linear-gradient(90deg, transparent, ${rankColor}55, transparent)` }}
       />
 
-      {/* Header minimal — safe area iOS */}
-      <div className="relative z-10 pt-12" />
-
       {/* Zone centrale — Blason héro */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-6 px-5">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-14 px-5">
 
         {/* Label RANKED PLAY style CoD */}
         <motion.p
