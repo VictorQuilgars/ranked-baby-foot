@@ -38,7 +38,7 @@ export default function LoginPage() {
 
       {/* ── Section Logo + Titre ── */}
       <motion.div
-        className="flex flex-col items-center gap-6 w-full mt-4"
+        className="flex flex-col items-center gap-6 w-full mt-16"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -84,9 +84,6 @@ export default function LoginPage() {
       >
         <p className="text-xl font-black text-white leading-snug">
           Grimpe dans les rangs.<br />Prouve ta valeur.
-        </p>
-        <p className="text-sm text-muted max-w-xs leading-relaxed">
-          Système de classement compétitif — chaque match compte. Du Bronze à l'Iridescent, ta progression ne ment pas.
         </p>
       </motion.div>
 
