@@ -43,17 +43,11 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Zone logo — remplacer l'img src quand le logo est prêt */}
-        <div
-          className="w-32 h-32 rounded-3xl flex items-center justify-center overflow-hidden"
-          style={{
-            background: 'radial-gradient(circle at 35% 30%, rgba(233,69,96,0.35), rgba(10,14,26,0.9))',
-            border: '2px solid rgba(233,69,96,0.3)',
-            boxShadow: '0 0 50px rgba(233,69,96,0.2), 0 8px 0 rgba(0,0,0,0.5)',
-          }}
-        >
-          <img src="/logo/logo.png" alt="Ranked Baby Foot" className="w-full h-full object-contain" />
-        </div>
+        <img
+          src="/logo/logo.png"
+          alt="Ranked Baby Foot"
+          className="w-64 h-64 object-contain"
+        />
 
         {/* Titre */}
         <div className="flex flex-col items-center gap-2 text-center">
