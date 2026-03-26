@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Shield, Star, Target, TrendingUp } from 'lucide-react';
+import { Save, Shield, Star, Target, TrendingUp, LogOut } from 'lucide-react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { SRBar } from '@/components/rank/SRBar';
 import { apiRequest } from '@/lib/api';
@@ -99,9 +100,16 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
   const [feedback, setFeedback]                 = useState<string | null>(null);
   const [error, setError]                       = useState<string | null>(null);
   const [isPending, startTransition]            = useTransition();
+  const router                                  = useRouter();
 
   const isPlacement = player.placement_matches_left > 0;
   const rankColor   = RANK_COLORS[player.rank];
+
+  async function signOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   function saveProfile() {
     setFeedback(null);
@@ -196,6 +204,18 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
       </div>
 
       {/* ── Contenu ── */}
+      {/* Bouton déconnexion */}
+      <div className="relative z-10 px-5 pb-2 flex justify-end">
+        <button
+          type="button"
+          onClick={signOut}
+          className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-muted active:text-red-400 transition-colors"
+        >
+          <LogOut size={13} strokeWidth={2.5} />
+          Déconnexion
+        </button>
+      </div>
+
       <div className="relative z-10 flex-1 px-5 pt-4 pb-28 overflow-hidden">
         <AnimatePresence mode="wait">
 
