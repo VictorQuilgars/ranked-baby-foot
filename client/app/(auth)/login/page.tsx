@@ -52,8 +52,7 @@ export default function LoginPage() {
             boxShadow: '0 0 50px rgba(233,69,96,0.2), 0 8px 0 rgba(0,0,0,0.5)',
           }}
         >
-          {/* Remplace ce bloc par <img src="/logo.png" ... /> quand tu as le logo */}
-          <span className="text-6xl">⚽</span>
+          <img src="/logo/logo.png" alt="Ranked Baby Foot" className="w-full h-full object-contain" />
         </div>
 
         {/* Titre */}
