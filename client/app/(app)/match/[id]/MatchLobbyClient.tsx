@@ -695,7 +695,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                       </button>
                     ) : (
                       <p className="mt-3 text-xs text-muted">
-                        {currentPlayer ? 'Quitte d'abord ton slot actuel pour changer.' : 'Le match doit être en lobby pour rejoindre.'}
+                        {currentPlayer ? "Quitte d'abord ton slot actuel pour changer." : 'Le match doit être en lobby pour rejoindre.'}
                       </p>
                     )}
                   </div>
