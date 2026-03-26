@@ -46,7 +46,7 @@ export default function LoginPage() {
         <img
           src="/logo/logo.png"
           alt="Ranked Baby Foot"
-          className="w-56 h-56 object-contain"
+          className="w-64 h-64 object-contain"
           style={{
             maskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
             WebkitMaskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
