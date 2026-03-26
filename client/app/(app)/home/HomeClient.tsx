@@ -52,7 +52,7 @@ export function HomeClient({ player }: HomeClientProps) {
       />
 
       {/* Zone centrale — Blason héro */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-14 px-5">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-6 px-5">
 
         {/* Label RANKED PLAY style CoD */}
         <motion.p
