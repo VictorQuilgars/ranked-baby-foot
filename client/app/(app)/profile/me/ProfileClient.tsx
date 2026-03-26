@@ -204,18 +204,6 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
       </div>
 
       {/* ── Contenu ── */}
-      {/* Bouton déconnexion */}
-      <div className="relative z-10 px-5 pb-2 flex justify-end">
-        <button
-          type="button"
-          onClick={signOut}
-          className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-muted active:text-red-400 transition-colors"
-        >
-          <LogOut size={13} strokeWidth={2.5} />
-          Déconnexion
-        </button>
-      </div>
-
       <div className="relative z-10 flex-1 px-5 pt-4 pb-28 overflow-hidden">
         <AnimatePresence mode="wait">
 
@@ -353,6 +341,24 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 <span className="font-black uppercase tracking-wide">
                   {isPending ? 'Sauvegarde...' : 'Sauvegarder'}
                 </span>
+              </button>
+
+              {/* Séparateur */}
+              <div className="h-px w-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
+
+              {/* Déconnexion */}
+              <button
+                type="button"
+                onClick={signOut}
+                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all active:scale-95"
+                style={{
+                  color: '#ef4444',
+                  border: '1.5px solid rgba(239,68,68,0.3)',
+                  background: 'rgba(239,68,68,0.08)',
+                }}
+              >
+                <LogOut size={16} strokeWidth={2.5} />
+                Déconnexion
               </button>
             </motion.div>
           )}
