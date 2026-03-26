@@ -36,56 +36,37 @@ export default function LoginPage() {
         }}
       />
 
-      {/* ── Section Logo + Titre ── */}
+      {/* ── Logo ── */}
       <motion.div
-        className="flex flex-col items-center gap-6 w-full mt-16"
-        initial={{ opacity: 0, y: -20 }}
+        className="flex flex-col items-center gap-4 w-full"
+        initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
         <img
           src="/logo/logo.png"
           alt="Ranked Baby Foot"
-          className="w-64 h-64 object-contain"
+          className="w-72 h-72 object-contain"
           style={{
-            maskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
-            WebkitMaskImage: 'radial-gradient(circle, black 52%, transparent 72%)',
+            maskImage: 'radial-gradient(circle, black 55%, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(circle, black 55%, transparent 75%)',
           }}
         />
-
-        {/* Titre */}
-        <div className="flex flex-col items-center gap-2 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted">
-            ★ Saison compétitive ★
-          </p>
-          <h1 className="text-5xl font-black text-white leading-none tracking-tight">
-            RANKED
-          </h1>
-          <h1
-            className="text-6xl font-black leading-none tracking-tight"
-            style={{
-              background: 'linear-gradient(135deg, #ff6b7a 0%, #e94560 50%, #c73652 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 0 24px rgba(233,69,96,0.55))',
-            }}
-          >
-            BABY FOOT
-          </h1>
-        </div>
-      </motion.div>
-
-      {/* ── Texte accrocheur ── */}
-      <motion.div
-        className="flex flex-col items-center gap-3 text-center px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
-      >
-        <p className="text-xl font-black text-white leading-snug">
-          Grimpe dans les rangs.<br />Prouve ta valeur.
+        <p className="text-[10px] font-black uppercase tracking-[0.45em] text-muted -mt-2">
+          ★ Saison compétitive ★
         </p>
       </motion.div>
+
+      {/* ── Tagline ── */}
+      <motion.p
+        className="text-lg font-black text-white text-center leading-snug"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+      >
+        Grimpe dans les rangs.<br />
+        <span style={{ color: '#e94560' }}>Prouve ta valeur.</span>
+      </motion.p>
 
       {/* ── Boutons de connexion ── */}
       <motion.div
