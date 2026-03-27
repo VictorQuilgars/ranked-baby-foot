@@ -2,6 +2,19 @@
 
 > Fichier de contexte pour l'assistant IA. Contient toutes les conventions, décisions architecturales et règles du projet.
 
+## Workflow — Avant et après chaque feature
+
+### Avant
+1. **Identifier l'issue GitHub correspondante** (si elle existe) pour bien cerner le scope attendu.
+2. **Lire les fichiers concernés** avant de les modifier.
+
+### Après
+1. **Mettre à jour `doc/Plan d'implementation.md`** : cocher la tâche ou ajouter une nouvelle ligne si elle n'y figure pas.
+2. **Commiter immédiatement les fichiers modifiés** — sans exception, que ce soit une feature, un fix, un refactor ou un changement de configuration. Un commit par unité de travail, avec un message clair.
+3. **Gérer l'issue GitHub** :
+   - Si une issue existante correspond → la fermer avec `gh issue close <id> --comment "Implémenté dans le commit <hash>"`.
+   - Si aucune issue n'existe → créer une issue avec `gh issue create`, puis la fermer immédiatement.
+
 ---
 
 ## Présentation du Projet
