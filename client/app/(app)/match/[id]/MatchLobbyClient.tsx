@@ -643,9 +643,9 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                   </span>
                 </div>
 
-                {occupant?.players ? (
+                {occupant ? (
                   <div className="mt-4 flex items-center gap-3">
-                    {occupant.players.avatar_url ? (
+                    {occupant.players?.avatar_url ? (
                       <img
                         src={occupant.players.avatar_url}
                         alt={occupant.players.username}
@@ -653,21 +653,23 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                       />
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-night-3 text-lg font-black text-white">
-                        {occupant.players.username.slice(0, 1).toUpperCase()}
+                        {occupant.players?.username.slice(0, 1).toUpperCase() ?? '?'}
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-white">{occupant.players.username}</p>
+                      <p className="truncate text-sm font-black text-white">{occupant.players?.username ?? '—'}</p>
                       <div className="mt-2 flex items-center gap-2">
-                        <RankBadge
-                          rank={occupant.players.rank}
-                          tier={occupant.players.rank_tier}
-                          size="sm"
-                          showLabel={false}
-                          isPlacement={occupant.players.placement_matches_left > 0}
-                          animated={false}
-                        />
+                        {occupant.players && (
+                          <RankBadge
+                            rank={occupant.players.rank}
+                            tier={occupant.players.rank_tier}
+                            size="sm"
+                            showLabel={false}
+                            isPlacement={occupant.players.placement_matches_left > 0}
+                            animated={false}
+                          />
+                        )}
                         {isCurrentSlot ? (
                           <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">Toi</span>
                         ) : null}

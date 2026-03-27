@@ -37,7 +37,7 @@ export default async function MatchLobbyPage({ params }: { params: Promise<{ id:
     ...(match as MatchRow),
     match_players: (match as MatchRow).match_players.map((entry) => ({
       ...entry,
-      players: entry.players?.[0] ?? null,
+      players: (Array.isArray(entry.players) ? entry.players[0] : entry.players) ?? null,
     })),
   };
 
