@@ -19,12 +19,11 @@ export function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 nav-bottom"
       style={{
-        background: 'linear-gradient(180deg, transparent 0%, #16213e 20%)',
-        backdropFilter: 'blur(16px)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
+        background: '#07080d',
+        borderTop: '1px solid rgba(255,255,255,0.07)',
       }}
     >
-      <div className="flex items-center justify-around px-2 pt-2 pb-1 max-w-md mx-auto">
+      <div className="flex items-stretch justify-around max-w-md mx-auto">
         {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
           const isActive = pathname.startsWith(href);
           return (
@@ -32,20 +31,31 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center gap-1 px-4 py-2.5 rounded-2xl transition-all duration-200',
-                isActive ? 'text-accent' : 'text-muted active:scale-90'
+                'relative flex flex-col items-center gap-1 flex-1 pt-2.5 pb-1 transition-all duration-150',
+                isActive ? 'active:scale-95' : 'active:scale-90',
               )}
-              style={isActive ? {
-                background: 'rgba(233,69,96,0.14)',
-                boxShadow: 'inset 0 1px 0 rgba(233,69,96,0.25)',
-              } : undefined}
             >
+              {/* Indicateur actif — barre en haut */}
+              {isActive && (
+                <span
+                  className="absolute top-0 left-1/2 -translate-x-1/2 h-[2px]"
+                  style={{
+                    width: 28,
+                    background: '#e94560',
+                    boxShadow: '0 0 8px rgba(233,69,96,0.7)',
+                  }}
+                />
+              )}
+
               <Icon
-                size={22}
-                strokeWidth={isActive ? 2.5 : 1.8}
-                className={cn(isActive && 'drop-shadow-[0_0_10px_rgba(233,69,96,0.9)]')}
+                size={20}
+                strokeWidth={isActive ? 2.5 : 1.6}
+                style={{ color: isActive ? '#e94560' : 'rgba(255,255,255,0.3)' }}
               />
-              <span className={cn('text-[10px] font-black tracking-widest uppercase', isActive ? 'text-accent' : 'text-muted')}>
+              <span
+                className="text-[9px] font-black uppercase tracking-widest"
+                style={{ color: isActive ? '#e94560' : 'rgba(255,255,255,0.25)' }}
+              >
                 {label}
               </span>
             </Link>

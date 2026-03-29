@@ -8,11 +8,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Fond (style Clash Royale dark)
+        // Fond (style COD dark)
         night: {
-          DEFAULT: '#1a1a2e',
-          2: '#16213e',
-          3: '#0f3460',
+          DEFAULT: '#07080d',
+          2: '#0d0f1a',
+          3: '#131727',
         },
         // Accents UI
         accent: '#e94560',
