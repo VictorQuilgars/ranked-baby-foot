@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Search, ScanLine, Ticket } from 'lucide-react';
+import { ChevronLeft, Search, ScanLine } from 'lucide-react';
+import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
 
 export function JoinMatchClient() {
@@ -34,90 +35,114 @@ export function JoinMatchClient() {
 
   return (
     <div
-      className="min-h-screen px-5 pt-10 pb-28"
-      style={{
-        background:
-          'radial-gradient(circle at top, rgba(0,180,216,0.18) 0%, rgba(15,52,96,0.4) 24%, #1a1a2e 72%)',
-      }}
+      className="min-h-screen pb-28"
+      style={{ background: '#07080d' }}
     >
-      <motion.section
-        className="rounded-[32px] p-6"
+      {/* Page header strip */}
+      <div
+        className="flex items-center gap-3 px-4"
         style={{
-          background: 'linear-gradient(145deg, rgba(22,33,62,0.96), rgba(15,52,96,0.9))',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.35)',
+          height: 56,
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'rgba(0,0,0,0.3)',
         }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#00b4d8]">Rejoindre</p>
-            <h1 className="mt-2 text-3xl font-black text-white">Entrer un code</h1>
-            <p className="mt-2 max-w-sm text-sm text-muted">
-              Rejoins un lobby existant avec le code à 6 caractères partagé par l’hôte.
+        <Link href="/home" className="flex items-center text-white/60 hover:text-white transition-colors">
+          <ChevronLeft size={20} />
+        </Link>
+        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white">
+          Rejoindre
+        </span>
+      </div>
+
+      <div className="px-4 pt-5">
+        <motion.div
+          className="flex flex-col gap-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
+          {/* Code input panel */}
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4,
+              padding: '20px 16px',
+            }}
+          >
+            <p
+              className="text-[9px] font-black uppercase tracking-[0.5em]"
+              style={{ color: 'rgba(168,168,179,0.7)' }}
+            >
+              Code du lobby
+            </p>
+
+            <input
+              value={code}
+              onChange={(event) =>
+                setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))
+              }
+              placeholder="AB12CD"
+              style={{
+                marginTop: 14,
+                width: '100%',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 4,
+                padding: '18px 16px',
+                color: '#fff',
+                fontSize: 32,
+                fontWeight: 900,
+                textAlign: 'center',
+                letterSpacing: '0.5em',
+                textTransform: 'uppercase',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+              }}
+              className="focus:border-accent placeholder:text-white/20"
+            />
+
+            <button
+              type="button"
+              onClick={lookupMatch}
+              disabled={isPending}
+              className="btn-cod-red justify-center gap-3 mt-5 w-full"
+            >
+              <Search size={17} />
+              {isPending ? 'Recherche...' : 'Trouver le match'}
+            </button>
+
+            {error ? (
+              <p className="mt-4 text-sm font-medium text-red-400">{error}</p>
+            ) : null}
+          </div>
+
+          {/* QR / invitations info panel */}
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderLeft: '3px solid rgba(255,255,255,0.15)',
+              borderRadius: 4,
+              padding: '16px',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <ScanLine size={17} style={{ color: 'rgba(168,168,179,0.6)' }} />
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.5em]"
+                style={{ color: 'rgba(168,168,179,0.7)' }}
+              >
+                QR code &amp; invitations
+              </p>
+            </div>
+            <p className="mt-3 text-sm" style={{ color: 'rgba(168,168,179,0.6)', lineHeight: 1.6 }}>
+              Le scan QR et la gestion d&apos;invitations arrivent dans le prochain lot. Pour l&apos;instant, le code lobby est le chemin le plus direct.
             </p>
           </div>
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-3xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0,180,216,0.25), rgba(123,47,255,0.22))',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            <Ticket size={24} className="text-white" />
-          </div>
-        </div>
-
-        <div className="mt-8 rounded-[28px] border border-white/8 bg-white/4 px-5 py-5">
-          <div className="flex items-center gap-3 text-sm text-muted">
-            <Search size={16} />
-            <span>Code du lobby</span>
-          </div>
-
-          <input
-            value={code}
-            onChange={(event) =>
-              setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))
-            }
-            placeholder="AB12CD"
-            className="mt-4 w-full rounded-3xl border border-white/10 bg-night-2 px-5 py-5 text-center text-3xl font-black uppercase tracking-[0.4em] text-white outline-none transition focus:border-[#00b4d8]"
-          />
-
-          <button
-            type="button"
-            onClick={lookupMatch}
-            disabled={isPending}
-            className="mt-5 inline-flex w-full items-center justify-center gap-3 rounded-3xl px-5 py-4 text-base font-black text-white transition-all disabled:opacity-60"
-            style={{
-              background: 'linear-gradient(135deg, #00b4d8, #0f83a6)',
-              boxShadow: '0 14px 30px rgba(0,180,216,0.3)',
-            }}
-          >
-            <Search size={18} />
-            {isPending ? 'Recherche...' : 'Trouver le match'}
-          </button>
-
-          {error ? <p className="mt-4 text-sm font-medium text-red-400">{error}</p> : null}
-        </div>
-
-        <div
-          className="mt-5 rounded-[28px] px-5 py-5"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <ScanLine size={18} className="text-gold-ui" />
-            <h2 className="text-sm font-black text-white">QR code et invitations</h2>
-          </div>
-          <p className="mt-3 text-sm text-muted">
-            Le scan QR et la gestion d’invitations arrivent dans le prochain lot. Pour l’instant, le code lobby est le chemin le plus direct.
-          </p>
-        </div>
-      </motion.section>
+        </motion.div>
+      </div>
     </div>
   );
 }

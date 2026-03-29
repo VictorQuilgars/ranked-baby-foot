@@ -136,9 +136,9 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0d111e' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#07080d' }}>
 
-      {/* Fond atmosphérique */}
+      {/* Atmospheric rank glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: `radial-gradient(ellipse 70% 35% at 50% 0%, ${rankColor}18 0%, transparent 65%)` }}
@@ -150,20 +150,20 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
           <img
             src={player.avatar_url}
             alt={player.username}
-            className="w-16 h-16 rounded-2xl object-cover border-2"
-            style={{ borderColor: `${rankColor}66` }}
+            className="w-16 h-16 object-cover border-2"
+            style={{ borderRadius: 4, borderColor: `${rankColor}66` }}
           />
         ) : (
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black text-white"
-            style={{ background: `${rankColor}33`, border: `2px solid ${rankColor}55` }}
+            className="w-16 h-16 flex items-center justify-center text-2xl font-black text-white"
+            style={{ borderRadius: 4, background: `${rankColor}33`, border: `2px solid ${rankColor}55` }}
           >
             {player.username[0].toUpperCase()}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted">Profil joueur</p>
-          <h1 className="text-2xl font-black text-white truncate">{player.username}</h1>
+          <p className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">Profil joueur</p>
+          <h1 className="text-2xl font-black text-white truncate uppercase tracking-wide">{player.username}</h1>
           {!isPlacement && (
             <p className="text-sm font-bold mt-0.5" style={{ color: rankColor }}>
               {formatRankLabel(player.rank, player.rank_tier)} · {player.rank_points} SR
@@ -172,11 +172,11 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
         </div>
       </div>
 
-      {/* ── Onglets ── */}
+      {/* ── Tabs ── */}
       <div className="relative z-10 px-5 mb-1">
         <div
-          className="flex rounded-2xl p-1 gap-1"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          className="flex gap-0"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
         >
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -185,25 +185,22 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className="relative flex-1 py-2.5 text-sm font-black uppercase tracking-widest rounded-xl transition-colors duration-200"
-                style={{ color: isActive ? '#1a1a2e' : '#a8a8b3' }}
+                className="flex-1 py-3 text-sm font-black uppercase tracking-widest transition-colors duration-200 relative"
+                style={{
+                  color: isActive ? '#ffffff' : '#a8a8b3',
+                  background: 'transparent',
+                  borderBottom: isActive ? `2px solid ${rankColor}` : '2px solid transparent',
+                  marginBottom: -1,
+                }}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="tab-pill"
-                    className="absolute inset-0 rounded-xl"
-                    style={{ background: rankColor }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">{tab.label}</span>
+                {tab.label}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── Contenu ── */}
+      {/* ── Content ── */}
       <div className="relative z-10 flex-1 px-5 pt-4 pb-28 overflow-hidden">
         <AnimatePresence mode="wait">
 
@@ -217,7 +214,7 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
               transition={{ duration: 0.2 }}
               className="flex flex-col gap-4"
             >
-              {/* Blason + barre */}
+              {/* Badge + bar */}
               <div className="flex flex-col items-center pt-4 pb-6 gap-3">
                 <div className="relative flex items-center justify-center">
                   <div
@@ -231,7 +228,7 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                   <RankBadge rank={player.rank} tier={player.rank_tier} size="xl" showLabel={false} isPlacement={isPlacement} animated />
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-muted">Rang</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">Rang</p>
                   <h2 className="text-3xl font-black uppercase tracking-wide mt-0.5" style={{ color: rankColor }}>
                     {isPlacement ? 'En placement' : formatRankLabel(player.rank, player.rank_tier)}
                   </h2>
@@ -248,7 +245,7 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 )}
               </div>
 
-              {/* Grille de stats */}
+              {/* Stats grid */}
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Winrate',  value: `${getWinRate(player)}%`, icon: TrendingUp, color: '#22c55e' },
@@ -260,11 +257,11 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 ].map(({ label, value, icon: Icon, color }) => (
                   <div
                     key={label}
-                    className="rounded-2xl px-4 py-4"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                    className="px-4 py-4"
+                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4 }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted">{label}</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">{label}</span>
                       <Icon size={14} style={{ color }} />
                     </div>
                     <p className="text-2xl font-black text-white">{value}</p>
@@ -272,12 +269,12 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 ))}
               </div>
 
-              {/* Total matchs */}
+              {/* Total matches */}
               <div
-                className="rounded-2xl px-5 py-4 flex items-center justify-between"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                className="px-5 py-4 flex items-center justify-between"
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4 }}
               >
-                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted">Total matchs joués</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">Total matchs joués</span>
                 <span className="text-2xl font-black text-white">{player.total_games}</span>
               </div>
             </motion.div>
@@ -294,18 +291,19 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
               className="flex flex-col gap-5"
             >
               <label className="flex flex-col gap-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted">Pseudo</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">Pseudo</span>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   maxLength={20}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-white outline-none transition focus:border-accent text-base font-bold"
+                  className="border border-white/10 bg-white/5 px-4 py-3.5 text-white outline-none transition focus:border-accent text-base font-bold"
+                  style={{ borderRadius: 4 }}
                   placeholder="ton_pseudo"
                 />
               </label>
 
               <div className="flex flex-col gap-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted">Position préférée</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">Position préférée</span>
                 <div className="grid grid-cols-3 gap-2">
                   {POSITION_OPTIONS.map((option) => {
                     const isActive = preferredPosition === option.value;
@@ -314,10 +312,12 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                         key={option.value}
                         type="button"
                         onClick={() => setPreferredPosition(option.value)}
-                        className="rounded-2xl py-3 text-sm font-black uppercase tracking-wide transition-all"
+                        className="py-3 text-sm font-black uppercase tracking-wide transition-all"
                         style={{
-                          background: isActive ? `${rankColor}33` : 'rgba(255,255,255,0.04)',
-                          border: isActive ? `1.5px solid ${rankColor}` : '1.5px solid rgba(255,255,255,0.08)',
+                          borderRadius: 3,
+                          background: isActive ? `${rankColor}22` : 'rgba(255,255,255,0.025)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          borderLeft: isActive ? `3px solid ${rankColor}` : '3px solid transparent',
                           color: isActive ? rankColor : '#a8a8b3',
                         }}
                       >
@@ -335,7 +335,7 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 type="button"
                 onClick={saveProfile}
                 disabled={isPending}
-                className="btn-cr-red justify-center gap-2 mt-2"
+                className="btn-cod-red justify-center gap-2 mt-2 w-full"
               >
                 <Save size={18} />
                 <span className="font-black uppercase tracking-wide">
@@ -343,18 +343,19 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                 </span>
               </button>
 
-              {/* Séparateur */}
+              {/* Separator */}
               <div className="h-px w-full" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
-              {/* Déconnexion */}
+              {/* Sign out */}
               <button
                 type="button"
                 onClick={signOut}
-                className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 w-full py-3.5 text-sm font-black uppercase tracking-widest transition-all active:scale-95"
                 style={{
+                  borderRadius: 3,
                   color: '#ef4444',
-                  border: '1.5px solid rgba(239,68,68,0.3)',
-                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  background: 'rgba(239,68,68,0.07)',
                 }}
               >
                 <LogOut size={16} strokeWidth={2.5} />
@@ -375,8 +376,8 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
             >
               {history.length === 0 ? (
                 <div
-                  className="rounded-2xl px-4 py-12 text-center mt-4"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+                  className="px-4 py-12 text-center mt-4"
+                  style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 4 }}
                 >
                   <p className="text-white font-black uppercase tracking-wide">Aucun match</p>
                   <p className="mt-2 text-sm text-muted">Tes parties terminées apparaîtront ici.</p>
@@ -393,11 +394,12 @@ export function ProfileClient({ initialPlayer, history }: ProfileClientProps) {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className="rounded-2xl px-4 py-4"
+                      className="px-4 py-4"
                       style={{
-                        background: 'rgba(255,255,255,0.04)',
+                        background: 'rgba(255,255,255,0.025)',
                         border: `1px solid ${outcome.color}22`,
                         borderLeft: `3px solid ${outcome.color}`,
+                        borderRadius: 4,
                       }}
                     >
                       <div className="flex items-center justify-between gap-3">

@@ -54,10 +54,10 @@ type MatchLobbyClientProps = {
 };
 
 const SLOT_ORDER: Array<{ team: Team; position: Position; label: string; accent: string }> = [
-  { team: 'A', position: 'attacker', label: 'A · Attaquant', accent: '#00b4d8' },
-  { team: 'A', position: 'goalkeeper', label: 'A · Gardien', accent: '#00b4d8' },
-  { team: 'B', position: 'attacker', label: 'B · Attaquant', accent: '#e94560' },
-  { team: 'B', position: 'goalkeeper', label: 'B · Gardien', accent: '#e94560' },
+  { team: 'A', position: 'attacker', label: 'ÉQUIPE A · ATK', accent: '#00b4d8' },
+  { team: 'A', position: 'goalkeeper', label: 'ÉQUIPE A · GK', accent: '#00b4d8' },
+  { team: 'B', position: 'attacker', label: 'ÉQUIPE B · ATK', accent: '#e94560' },
+  { team: 'B', position: 'goalkeeper', label: 'ÉQUIPE B · GK', accent: '#e94560' },
 ];
 
 const TEAM_ACCENT: Record<Team, string> = { A: '#00b4d8', B: '#e94560' };
@@ -186,31 +186,35 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
     return (
       <div
         className="min-h-screen flex flex-col pb-28 relative overflow-hidden"
-        style={{ background: '#0d111e' }}
+        style={{ background: '#07080d' }}
       >
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `radial-gradient(ellipse 80% 45% at 50% 15%, ${winnerAccent}20 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse 80% 45% at 50% 15%, ${winnerAccent}22 0%, transparent 70%)`,
           }}
         />
 
         <div className="relative z-10 px-5 pt-10 flex flex-col gap-4">
           {/* Winner banner */}
           <motion.div
-            className="rounded-[28px] p-6 text-center"
             style={{
-              background: `linear-gradient(145deg, ${winnerAccent}18, ${winnerAccent}06)`,
-              border: `1px solid ${winnerAccent}44`,
+              background: 'rgba(255,255,255,0.025)',
+              border: `1px solid rgba(255,255,255,0.06)`,
+              borderLeft: `4px solid ${winnerAccent}`,
+              borderRadius: 4,
+              padding: '20px 20px 20px 18px',
             }}
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           >
-            <Trophy size={36} style={{ color: winnerAccent }} className="mx-auto mb-3" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-2" style={{ color: `${winnerAccent}99` }}>
-              Résultat final
-            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <Trophy size={20} style={{ color: winnerAccent }} />
+              <p className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: `${winnerAccent}99` }}>
+                Résultat final
+              </p>
+            </div>
             <h1 className="text-2xl font-black text-white uppercase tracking-wide mb-1">
               {isDraw ? 'Match nul' : `Victoire Équipe ${winner}`}
             </h1>
@@ -221,16 +225,17 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
 
           {/* SR Results */}
           <motion.div
-            className="rounded-[28px] p-5"
             style={{
-              background: 'rgba(22,33,62,0.9)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4,
+              padding: '20px',
             }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.4 }}
           >
-            <h2 className="text-[10px] font-black uppercase tracking-[0.35em] text-muted mb-4">Résultats SR</h2>
+            <h2 className="text-[9px] font-black uppercase tracking-[0.5em] text-muted mb-4">Résultats SR</h2>
 
             {(['A', 'B'] as Team[]).map((team) => {
               const players = team === 'A' ? teamAPlayers : teamBPlayers;
@@ -240,7 +245,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                 <div key={team} className="mb-4 last:mb-0">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${accent}44, transparent)` }} />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: accent }}>
+                    <span className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: accent }}>
                       Équipe {team}{isWinner ? ' · Vainqueur' : ''}
                     </span>
                     <div className="h-px flex-1" style={{ background: `linear-gradient(90deg, transparent, ${accent}44)` }} />
@@ -252,7 +257,12 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                       <div
                         key={entry.player_id}
                         className="flex items-center gap-3 py-3 border-b last:border-b-0"
-                        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+                        style={{
+                          borderColor: 'rgba(255,255,255,0.06)',
+                          borderLeft: `3px solid ${accent}`,
+                          paddingLeft: 10,
+                          marginLeft: -2,
+                        }}
                       >
                         {p ? (
                           <RankBadge
@@ -264,7 +274,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                             animated={false}
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-2xl bg-white/5" />
+                          <div className="w-9 h-9 bg-white/5" style={{ borderRadius: 2 }} />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
@@ -305,12 +315,12 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
           {/* Back button */}
           <motion.button
             onClick={() => router.push('/home')}
-            className="btn-cr-dark justify-center"
+            className="btn-cod-dark justify-center"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 0.4 }}
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </motion.button>
         </div>
       </div>
@@ -322,12 +332,12 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
     return (
       <div
         className="min-h-screen flex flex-col pb-28 relative overflow-hidden"
-        style={{ background: '#0d111e' }}
+        style={{ background: '#07080d' }}
       >
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse 70% 40% at 25% 10%, #00b4d820 0%, transparent 60%), radial-gradient(ellipse 70% 40% at 75% 10%, #e9456020 0%, transparent 60%)',
+            background: 'radial-gradient(ellipse 70% 40% at 20% 5%, #00b4d818 0%, transparent 55%), radial-gradient(ellipse 70% 40% at 80% 5%, #e9456018 0%, transparent 55%)',
           }}
         />
 
@@ -336,19 +346,24 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
           <div className="flex items-center justify-between">
             <div>
               <p
-                className="text-[10px] font-black uppercase tracking-[0.45em]"
+                className="text-[9px] font-black uppercase tracking-[0.5em]"
                 style={{ color: '#e94560aa' }}
               >
-                ★ En cours ★
+                ◆ En cours ◆
               </p>
-              <h1 className="text-lg font-black text-white mt-0.5">
+              <h1 className="text-lg font-black text-white mt-0.5 uppercase tracking-wide">
                 {match.name ?? `Match ${match.code}`}
               </h1>
             </div>
             <button
               type="button"
               onClick={copyCode}
-              className="inline-flex items-center gap-1.5 rounded-2xl border border-white/10 bg-white/6 px-3 py-2 text-xs font-bold text-white"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white"
+              style={{
+                borderRadius: 3,
+                border: '1px solid rgba(255,255,255,0.10)',
+                background: 'rgba(255,255,255,0.06)',
+              }}
             >
               <Copy size={14} />
               {match.code}
@@ -357,11 +372,11 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
 
           {/* Score board */}
           <motion.div
-            className="rounded-[32px] p-6"
             style={{
-              background: 'linear-gradient(145deg, rgba(22,33,62,0.96), rgba(15,52,96,0.9))',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 30px 80px rgba(0,0,0,0.35)',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4,
+              padding: '24px',
             }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -371,7 +386,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
               {/* Team A */}
               <div className="flex-1 text-center">
                 <p
-                  className="text-[10px] font-black uppercase tracking-[0.35em] mb-2"
+                  className="text-[9px] font-black uppercase tracking-[0.5em] mb-2"
                   style={{ color: '#00b4d8' }}
                 >
                   Équipe A
@@ -379,7 +394,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                 <motion.p
                   key={match.score_team_a}
                   className="text-7xl font-black leading-none"
-                  style={{ color: '#00b4d8', filter: 'drop-shadow(0 0 20px #00b4d880)' }}
+                  style={{ color: '#00b4d8', filter: 'drop-shadow(0 0 18px #00b4d870)' }}
                   initial={{ scale: 1.4 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -397,8 +412,8 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
 
               {/* Divider */}
               <div className="flex flex-col items-center gap-1 shrink-0">
-                <p className="text-2xl font-black text-white/20">vs</p>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted">
+                <p className="text-2xl font-black uppercase tracking-widest text-white/20">VS</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted">
                   /{match.score_target}
                 </p>
               </div>
@@ -406,7 +421,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
               {/* Team B */}
               <div className="flex-1 text-center">
                 <p
-                  className="text-[10px] font-black uppercase tracking-[0.35em] mb-2"
+                  className="text-[9px] font-black uppercase tracking-[0.5em] mb-2"
                   style={{ color: '#e94560' }}
                 >
                   Équipe B
@@ -414,7 +429,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                 <motion.p
                   key={match.score_team_b}
                   className="text-7xl font-black leading-none"
-                  style={{ color: '#e94560', filter: 'drop-shadow(0 0 20px #e9456080)' }}
+                  style={{ color: '#e94560', filter: 'drop-shadow(0 0 18px #e9456070)' }}
                   initial={{ scale: 1.4 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -431,21 +446,20 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
               </div>
             </div>
 
-            {/* Progress bars */}
-            <div className="mt-5 grid grid-cols-2 gap-2">
+            {/* Progress bars — single-row sharp track */}
+            <div className="mt-5 flex gap-1 h-2" style={{ borderRadius: 2, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
               {(['A', 'B'] as Team[]).map((team) => {
                 const score = team === 'A' ? match.score_team_a : match.score_team_b;
-                const pct = Math.min(100, (score / match.score_target) * 100);
+                const pct = Math.min(50, (score / match.score_target) * 50);
                 const accent = TEAM_ACCENT[team];
                 return (
-                  <div key={team} className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ background: accent }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.4, ease: 'easeOut' }}
-                    />
-                  </div>
+                  <motion.div
+                    key={team}
+                    className="h-full"
+                    style={{ background: accent, width: `${pct}%`, marginLeft: team === 'B' ? 'auto' : undefined }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                  />
                 );
               })}
             </div>
@@ -468,14 +482,21 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                     type="button"
                     onClick={() => recordGoal(team)}
                     disabled={isPending}
-                    className="flex flex-col items-center justify-center rounded-[24px] py-5 font-black text-white transition-all active:scale-95 disabled:opacity-50"
+                    className="flex flex-col items-center justify-center py-6 font-black text-white transition-all disabled:opacity-50"
                     style={{
-                      background: `linear-gradient(145deg, ${accent}, ${accent}cc)`,
-                      boxShadow: `0 6px 0 ${darkAccent}`,
+                      borderRadius: 4,
+                      background: accent,
+                      boxShadow: `0 5px 0 ${darkAccent}`,
+                      transform: 'translateY(0)',
                     }}
+                    onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 3px 0 ${darkAccent}`; }}
+                    onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 5px 0 ${darkAccent}`; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 5px 0 ${darkAccent}`; }}
+                    onTouchStart={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 3px 0 ${darkAccent}`; }}
+                    onTouchEnd={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 5px 0 ${darkAccent}`; }}
                   >
                     <span className="text-3xl leading-none mb-1">+</span>
-                    <span className="text-xs uppercase tracking-[0.3em]">But {team}</span>
+                    <span className="text-[10px] uppercase tracking-[0.4em]">But {team}</span>
                   </button>
                 );
               })}
@@ -500,213 +521,216 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
 
   return (
     <div
-      className="min-h-screen px-5 pt-10 pb-28"
-      style={{
-        background:
-          'radial-gradient(circle at top, rgba(0,180,216,0.12) 0%, rgba(233,69,96,0.14) 18%, rgba(15,52,96,0.35) 32%, #1a1a2e 72%)',
-      }}
+      className="min-h-screen px-5 pt-10 pb-28 relative overflow-hidden"
+      style={{ background: '#07080d' }}
     >
-      <motion.section
-        className="rounded-[32px] p-6"
+      {/* Atmospheric dual glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(145deg, rgba(22,33,62,0.96), rgba(15,52,96,0.9))',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.35)',
+          background: 'radial-gradient(ellipse 60% 30% at 20% 5%, #00b4d814 0%, transparent 60%), radial-gradient(ellipse 60% 30% at 80% 5%, #e9456014 0%, transparent 60%)',
         }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">Match</p>
-            <h1 className="mt-2 truncate text-3xl font-black text-white">
-              {match.name ?? `Lobby ${match.code}`}
-            </h1>
-            <p className="mt-2 text-sm text-muted">
-              Statut: <span className="font-bold text-white">{isLobby ? 'Lobby' : 'En cours'}</span>
-            </p>
-          </div>
+      />
 
-          <button
-            type="button"
-            onClick={copyCode}
-            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-bold text-white transition-all"
+      {/* Header strip */}
+      <motion.div
+        className="relative z-10 flex items-center justify-between gap-4 mb-4"
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="min-w-0">
+          <p className="text-[9px] font-black uppercase tracking-[0.5em] text-muted">Match</p>
+          <h1 className="mt-1 truncate text-2xl font-black text-white uppercase tracking-wide">
+            {match.name ?? `Lobby ${match.code}`}
+          </h1>
+        </div>
+        <button
+          type="button"
+          onClick={copyCode}
+          className="shrink-0 inline-flex items-center gap-2 px-3 py-2.5 text-sm font-bold text-white"
+          style={{
+            borderRadius: 3,
+            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'rgba(255,255,255,0.06)',
+          }}
+        >
+          <Copy size={14} />
+          {match.code}
+        </button>
+      </motion.div>
+
+      {/* Info strip — 3 sharp stat panels */}
+      <motion.div
+        className="relative z-10 grid grid-cols-3 gap-2 mb-5"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05, duration: 0.3 }}
+      >
+        {[
+          { label: 'Joueurs', value: `${match.match_players.length}/4`, icon: Users },
+          { label: 'Objectif', value: `${match.score_target}`, icon: Swords },
+          { label: 'Score', value: `${match.score_team_a}-${match.score_team_b}`, icon: Shield },
+        ].map(({ label, value, icon: Icon }) => (
+          <div
+            key={label}
+            className="px-3 py-3"
+            style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4,
+            }}
           >
-            <Copy size={16} />
-            {match.code}
-          </button>
-        </div>
-
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          {[
-            { label: 'Joueurs', value: `${match.match_players.length}/4`, icon: Users },
-            { label: 'Objectif', value: `${match.score_target}`, icon: Swords },
-            { label: 'Score', value: `${match.score_team_a} - ${match.score_team_b}`, icon: Shield },
-          ].map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="rounded-3xl px-4 py-4"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-[0.24em] text-muted">{label}</span>
-                <Icon size={16} className="text-white/70" />
-              </div>
-              <p className="mt-3 text-2xl font-black text-white">{value}</p>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-muted">{label}</span>
+              <Icon size={13} className="text-white/40" />
             </div>
-          ))}
-        </div>
+            <p className="text-xl font-black text-white">{value}</p>
+          </div>
+        ))}
+      </motion.div>
 
-        <div className="mt-5 flex flex-wrap gap-3">
-          {isLobby && !currentPlayer ? (
-            <p className="text-sm text-muted">Choisis un slot libre pour rejoindre la partie.</p>
-          ) : null}
-          {currentPlayer ? (
-            <button
-              type="button"
-              onClick={leaveMatch}
-              disabled={!isLobby || isPending}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm font-bold text-white transition-all disabled:opacity-50"
-            >
-              <LogOut size={16} />
-              Quitter le lobby
-            </button>
-          ) : null}
-          {isHost ? (
-            <button
-              type="button"
-              onClick={startMatch}
-              disabled={!canStart || isPending}
-              className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-white transition-all disabled:opacity-50"
+      {/* Slot grid */}
+      <motion.div
+        className="relative z-10 grid grid-cols-2 gap-3 mb-5"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.35 }}
+      >
+        {SLOT_ORDER.map((slot) => {
+          const occupant = match.match_players.find(
+            (entry) => entry.team === slot.team && entry.position === slot.position
+          );
+          const isCurrentSlot = occupant?.player_id === currentUserId;
+          const canJoinSlot = isLobby && !occupant && !currentPlayer;
+
+          return (
+            <div
+              key={`${slot.team}-${slot.position}`}
               style={{
-                background: 'linear-gradient(135deg, #e94560, #c73652)',
-                boxShadow: canStart ? '0 12px 26px rgba(233,69,96,0.28)' : 'none',
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderLeft: `3px solid ${slot.accent}`,
+                borderRadius: 4,
+                padding: '14px 14px 14px 12px',
               }}
             >
-              <Play size={16} />
-              Démarrer le match
-            </button>
-          ) : null}
-        </div>
-
-        {feedback ? <p className="mt-4 text-sm font-medium text-green-400">{feedback}</p> : null}
-        {error ? <p className="mt-4 text-sm font-medium text-red-400">{error}</p> : null}
-      </motion.section>
-
-      <motion.section
-        className="mt-5 rounded-[32px] p-5"
-        style={{
-          background: 'linear-gradient(180deg, rgba(12,18,33,0.98), rgba(22,33,62,0.9))',
-          border: '1px solid rgba(255,255,255,0.06)',
-        }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08, duration: 0.4 }}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-black text-white">Composition</h2>
-            <p className="text-xs text-muted">1 attaquant + 1 gardien par équipe</p>
-          </div>
-          {currentPlayer ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
-              Tu es placé en {currentPlayer.team} · {currentPlayer.position === 'attacker' ? 'Attaquant' : 'Gardien'}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {SLOT_ORDER.map((slot) => {
-            const occupant = match.match_players.find(
-              (entry) => entry.team === slot.team && entry.position === slot.position
-            );
-            const isCurrentSlot = occupant?.player_id === currentUserId;
-            const canJoinSlot = isLobby && !occupant && !currentPlayer;
-
-            return (
-              <div
-                key={`${slot.team}-${slot.position}`}
-                className="rounded-3xl px-4 py-4"
-                style={{
-                  background: `linear-gradient(135deg, ${slot.accent}16, rgba(255,255,255,0.03))`,
-                  border: `1px solid ${slot.accent}33`,
-                }}
+              {/* Slot header */}
+              <p
+                className="text-[9px] font-black uppercase tracking-[0.45em] mb-3"
+                style={{ color: slot.accent }}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-black text-white">{slot.label}</p>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: slot.accent }}>
-                    {slot.position === 'attacker' ? 'ATK' : 'GK'}
-                  </span>
-                </div>
+                {slot.label}
+              </p>
 
-                {occupant ? (
-                  <div className="mt-4 flex items-center gap-3">
-                    {occupant.players?.avatar_url ? (
-                      <img
-                        src={occupant.players.avatar_url}
-                        alt={occupant.players.username}
-                        className="h-12 w-12 rounded-2xl object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-night-3 text-lg font-black text-white">
-                        {occupant.players?.username.slice(0, 1).toUpperCase() ?? '?'}
-                      </div>
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-white">{occupant.players?.username ?? '—'}</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        {occupant.players && (
-                          <RankBadge
-                            rank={occupant.players.rank}
-                            tier={occupant.players.rank_tier}
-                            size="sm"
-                            showLabel={false}
-                            isPlacement={occupant.players.placement_matches_left > 0}
-                            animated={false}
-                          />
-                        )}
-                        {isCurrentSlot ? (
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">Toi</span>
-                        ) : null}
-                      </div>
+              {occupant ? (
+                <div className="flex items-center gap-2.5">
+                  {occupant.players?.avatar_url ? (
+                    <img
+                      src={occupant.players.avatar_url}
+                      alt={occupant.players.username}
+                      className="h-10 w-10 object-cover shrink-0"
+                      style={{ borderRadius: 3 }}
+                    />
+                  ) : (
+                    <div
+                      className="flex h-10 w-10 items-center justify-center shrink-0 text-base font-black text-white"
+                      style={{ borderRadius: 3, background: `${slot.accent}22` }}
+                    >
+                      {occupant.players?.username.slice(0, 1).toUpperCase() ?? '?'}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-black text-white leading-tight">{occupant.players?.username ?? '—'}</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      {occupant.players && (
+                        <RankBadge
+                          rank={occupant.players.rank}
+                          tier={occupant.players.rank_tier}
+                          size="sm"
+                          showLabel={false}
+                          isPlacement={occupant.players.placement_matches_left > 0}
+                          animated={false}
+                        />
+                      )}
+                      {isCurrentSlot ? (
+                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-accent">Toi</span>
+                      ) : null}
                     </div>
                   </div>
-                ) : (
-                  <div className="mt-4">
-                    <p className="text-sm text-muted">Slot libre</p>
-                    {canJoinSlot ? (
-                      <button
-                        type="button"
-                        onClick={() => joinSlot(slot.team, slot.position)}
-                        disabled={isPending}
-                        className={cn(
-                          'mt-3 inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-white transition-all',
-                          isPending && 'opacity-60'
-                        )}
-                        style={{
-                          background: `linear-gradient(135deg, ${slot.accent}, ${slot.accent}cc)`,
-                        }}
-                      >
-                        <Users size={16} />
-                        Rejoindre ce slot
-                      </button>
-                    ) : (
-                      <p className="mt-3 text-xs text-muted">
-                        {currentPlayer ? "Quitte d'abord ton slot actuel pour changer." : 'Le match doit être en lobby pour rejoindre.'}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </motion.section>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm text-muted mb-2">Slot libre</p>
+                  {canJoinSlot ? (
+                    <button
+                      type="button"
+                      onClick={() => joinSlot(slot.team, slot.position)}
+                      disabled={isPending}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black text-white uppercase tracking-wide transition-all',
+                        isPending && 'opacity-60'
+                      )}
+                      style={{
+                        borderRadius: 3,
+                        background: `${slot.accent}cc`,
+                        boxShadow: `0 3px 0 ${slot.team === 'A' ? '#006e85' : '#9e1e35'}`,
+                      }}
+                    >
+                      <Users size={13} />
+                      Rejoindre
+                    </button>
+                  ) : (
+                    <p className="text-xs text-muted">
+                      {currentPlayer ? "Quitte d'abord ton slot." : 'Lobby requis.'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </motion.div>
+
+      {/* Action buttons */}
+      <motion.div
+        className="relative z-10 flex flex-col gap-3"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+      >
+        {isLobby && !currentPlayer ? (
+          <p className="text-sm text-muted">Choisis un slot libre pour rejoindre la partie.</p>
+        ) : null}
+
+        {currentPlayer ? (
+          <button
+            type="button"
+            onClick={leaveMatch}
+            disabled={!isLobby || isPending}
+            className="btn-cod-dark inline-flex items-center gap-2 disabled:opacity-50"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            <LogOut size={16} />
+            Quitter le lobby
+          </button>
+        ) : null}
+
+        {isHost ? (
+          <button
+            type="button"
+            onClick={startMatch}
+            disabled={!canStart || isPending}
+            className="btn-cod-red justify-center gap-2 w-full disabled:opacity-50"
+          >
+            <Play size={16} />
+            Démarrer le match
+          </button>
+        ) : null}
+
+        {feedback ? <p className="text-sm font-medium text-green-400">{feedback}</p> : null}
+        {error ? <p className="text-sm font-medium text-red-400">{error}</p> : null}
+      </motion.div>
     </div>
   );
 }

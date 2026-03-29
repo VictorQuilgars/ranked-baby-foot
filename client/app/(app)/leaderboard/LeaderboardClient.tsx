@@ -35,7 +35,7 @@ function getPodiumStyle(index: number) {
     return {
       height: '220px',
       accent: '#f5a623',
-      glow: '0 18px 40px rgba(245, 166, 35, 0.35)',
+      glow: '0 12px 32px rgba(245, 166, 35, 0.30)',
       icon: Crown,
       label: 'Meneur',
     };
@@ -45,7 +45,7 @@ function getPodiumStyle(index: number) {
     return {
       height: '180px',
       accent: '#c0c0c0',
-      glow: '0 18px 40px rgba(192, 192, 192, 0.28)',
+      glow: '0 12px 32px rgba(192, 192, 192, 0.22)',
       icon: Medal,
       label: 'Challenger',
     };
@@ -54,7 +54,7 @@ function getPodiumStyle(index: number) {
   return {
     height: '160px',
     accent: '#cd7f32',
-    glow: '0 18px 40px rgba(205, 127, 50, 0.28)',
+    glow: '0 12px 32px rgba(205, 127, 50, 0.22)',
     icon: Flame,
     label: 'Outsider',
   };
@@ -66,228 +66,310 @@ export function LeaderboardClient({ players }: LeaderboardClientProps) {
 
   return (
     <div
-      className="min-h-screen px-5 pt-10 pb-28"
-      style={{
-        background:
-          'radial-gradient(circle at top, rgba(245,166,35,0.18) 0%, rgba(15,52,96,0.42) 28%, #1a1a2e 70%)',
-      }}
+      className="min-h-screen pb-28 relative"
+      style={{ background: '#07080d' }}
     >
-      <motion.section
-        className="rounded-[32px] p-6"
+      {/* Gold atmospheric glow at top */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
-          background: 'linear-gradient(145deg, rgba(22,33,62,0.96), rgba(15,52,96,0.88))',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.35)',
+          width: '600px',
+          height: '320px',
+          background: 'radial-gradient(ellipse at top, rgba(245,166,35,0.14) 0%, rgba(245,166,35,0.04) 45%, transparent 70%)',
+          filter: 'blur(28px)',
         }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
+      />
+
+      {/* ── Page header strip ── */}
+      <div
+        className="relative flex items-center justify-between px-5"
+        style={{
+          height: '56px',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          background: 'rgba(0,0,0,0.3)',
+        }}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-gold-ui">
-              Classement Officiel
-            </p>
-            <h1 className="mt-2 text-3xl font-black text-white">Top joueurs</h1>
-            <p className="mt-2 max-w-xs text-sm text-muted">
-              Les joueurs en placement sont exclus jusqu&apos;à la fin de leurs 5 matchs de calibrage.
-            </p>
-          </div>
-          <div
-            className="rounded-2xl px-4 py-3 text-right"
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
+        <div className="flex items-center gap-3">
+          <Crown size={14} style={{ color: '#f5a623' }} />
+          <span
+            className="text-[9px] font-black uppercase"
+            style={{ color: 'rgba(168,168,179,0.7)', letterSpacing: '0.5em' }}
           >
-            <p className="text-[11px] uppercase tracking-[0.25em] text-muted">Joueurs classés</p>
-            <p className="mt-1 text-2xl font-black text-white">{players.length}</p>
-          </div>
+            CLASSEMENT
+          </span>
         </div>
 
+        {/* Player count badge — sharp rectangle */}
+        <div
+          className="flex flex-col items-end px-3 py-1"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '3px',
+          }}
+        >
+          <span
+            className="text-[9px] font-black uppercase"
+            style={{ color: 'rgba(168,168,179,0.55)', letterSpacing: '0.3em' }}
+          >
+            JOUEURS CLASSÉS
+          </span>
+          <span className="text-base font-black text-white leading-none mt-0.5">{players.length}</span>
+        </div>
+      </div>
+
+      <div className="px-5 pt-6">
+
+        {/* ── Podium top 3 ── */}
         {topThree.length > 0 ? (
-          <div className="mt-8 grid grid-cols-3 items-end gap-3">
-            {PODIUM_ORDER.map((slot, visualIndex) => {
-              const player = topThree[slot];
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            <p
+              className="text-[9px] font-black uppercase mb-5"
+              style={{ color: 'rgba(168,168,179,0.5)', letterSpacing: '0.5em' }}
+            >
+              TOP 3
+            </p>
 
-              if (!player) {
-                return <div key={`empty-${visualIndex}`} />;
-              }
+            <div className="grid grid-cols-3 items-end gap-2">
+              {PODIUM_ORDER.map((slot, visualIndex) => {
+                const player = topThree[slot];
 
-              const podium = getPodiumStyle(slot);
-              const Icon = podium.icon;
+                if (!player) {
+                  return <div key={`empty-${visualIndex}`} />;
+                }
 
-              return (
-                <motion.div
-                  key={player.id}
-                  className="flex flex-col items-center"
-                  initial={{ opacity: 0, y: 28 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.12 * (visualIndex + 1), duration: 0.35 }}
-                >
-                  <div className="mb-3 flex flex-col items-center gap-2">
-                    {player.avatar_url ? (
-                      <img
-                        src={player.avatar_url}
-                        alt={player.username}
-                        className="h-16 w-16 rounded-full border-2 object-cover"
-                        style={{ borderColor: podium.accent, boxShadow: podium.glow }}
+                const podium = getPodiumStyle(slot);
+                const Icon = podium.icon;
+
+                return (
+                  <motion.div
+                    key={player.id}
+                    className="flex flex-col items-center"
+                    initial={{ opacity: 0, y: 28 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12 * (visualIndex + 1), duration: 0.35 }}
+                  >
+                    {/* Avatar above the column */}
+                    <div className="mb-3 flex flex-col items-center gap-2">
+                      {player.avatar_url ? (
+                        <img
+                          src={player.avatar_url}
+                          alt={player.username}
+                          className="h-14 w-14 rounded-full border-2 object-cover"
+                          style={{ borderColor: podium.accent, boxShadow: podium.glow }}
+                        />
+                      ) : (
+                        <div
+                          className="flex h-14 w-14 items-center justify-center rounded-full border-2 text-xl font-black text-white"
+                          style={{
+                            borderColor: podium.accent,
+                            background: `${podium.accent}28`,
+                            boxShadow: podium.glow,
+                          }}
+                        >
+                          {player.username.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+
+                      <RankBadge
+                        rank={player.rank}
+                        tier={player.rank_tier}
+                        size="md"
+                        showLabel={false}
+                        animated={slot === 0}
                       />
-                    ) : (
+                    </div>
+
+                    {/* Podium column — sharp, angular */}
+                    <div
+                      className="w-full px-2 pt-4 pb-5 text-center"
+                      style={{
+                        height: podium.height,
+                        background: `linear-gradient(180deg, ${podium.accent}18 0%, rgba(7,8,13,0.96) 65%)`,
+                        border: `1px solid ${podium.accent}40`,
+                        borderTop: `4px solid ${podium.accent}`,
+                        borderRadius: '2px',
+                        boxShadow: podium.glow,
+                      }}
+                    >
                       <div
-                        className="flex h-16 w-16 items-center justify-center rounded-full border-2 text-xl font-black text-white"
+                        className="mx-auto flex h-8 w-8 items-center justify-center text-white"
                         style={{
-                          borderColor: podium.accent,
-                          background: `${podium.accent}33`,
-                          boxShadow: podium.glow,
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          borderRadius: '2px',
                         }}
                       >
-                        {player.username.slice(0, 1).toUpperCase()}
+                        <Icon size={16} />
                       </div>
-                    )}
+                      <p
+                        className="mt-2 text-[9px] font-black uppercase"
+                        style={{ color: podium.accent, letterSpacing: '0.22em' }}
+                      >
+                        {podium.label}
+                      </p>
+                      <p className="mt-1.5 truncate text-sm font-black text-white">{player.username}</p>
+                      <p className="mt-1 text-2xl font-black text-white leading-none">{player.rank_points}</p>
+                      <p
+                        className="text-[9px] font-black uppercase"
+                        style={{ color: 'rgba(168,168,179,0.5)', letterSpacing: '0.2em' }}
+                      >
+                        SR
+                      </p>
+                      <div className="mt-3 flex justify-center gap-2 text-[10px]" style={{ color: 'rgba(168,168,179,0.6)' }}>
+                        <span>{player.wins}V</span>
+                        <span>{player.losses}D</span>
+                        <span>{getWinRate(player)}%</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="px-5 py-10 text-center"
+            style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '3px',
+            }}
+          >
+            <p className="text-base font-black text-white uppercase tracking-widest">Aucun joueur classé</p>
+            <p className="mt-2 text-sm" style={{ color: 'rgba(168,168,179,0.6)' }}>
+              Termine les matchs de placement pour apparaître ici.
+            </p>
+          </motion.div>
+        )}
 
+        {/* ── Full list ── */}
+        <motion.div
+          className="mt-8"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.45 }}
+        >
+          <p
+            className="text-[9px] font-black uppercase mb-4"
+            style={{ color: 'rgba(168,168,179,0.5)', letterSpacing: '0.5em' }}
+          >
+            CLASSEMENT COMPLET
+          </p>
+
+          <div className="flex flex-col gap-2">
+            {players.map((player, index) => (
+              <motion.div
+                key={player.id}
+                className="flex items-center gap-3 px-4 py-3"
+                style={{
+                  background: index < 3
+                    ? 'rgba(245,166,35,0.06)'
+                    : 'rgba(255,255,255,0.025)',
+                  border: index < 3
+                    ? '1px solid rgba(245,166,35,0.20)'
+                    : '1px solid rgba(255,255,255,0.06)',
+                  borderLeft: index < 3
+                    ? '3px solid rgba(245,166,35,0.70)'
+                    : '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '2px',
+                }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 * index, duration: 0.28 }}
+              >
+                {/* Rank number */}
+                <div
+                  className="w-8 text-center text-sm font-black"
+                  style={{ color: index < 3 ? '#f5a623' : 'rgba(255,255,255,0.5)' }}
+                >
+                  {index + 1}
+                </div>
+
+                {/* Avatar */}
+                {player.avatar_url ? (
+                  <img
+                    src={player.avatar_url}
+                    alt={player.username}
+                    className="h-11 w-11 object-cover flex-shrink-0"
+                    style={{ borderRadius: '3px' }}
+                  />
+                ) : (
+                  <div
+                    className="flex h-11 w-11 items-center justify-center text-base font-black flex-shrink-0"
+                    style={{
+                      borderRadius: '3px',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: '#e94560',
+                    }}
+                  >
+                    {player.username.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+
+                {/* Player info */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-black text-white uppercase tracking-wide">
+                      {player.username}
+                    </p>
+                    {index === 0 ? <Crown size={12} style={{ color: '#f5a623', flexShrink: 0 }} /> : null}
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2.5">
                     <RankBadge
                       rank={player.rank}
                       tier={player.rank_tier}
-                      size="md"
+                      size="sm"
                       showLabel={false}
-                      animated={slot === 0}
+                      animated={false}
                     />
-                  </div>
-
-                  <div
-                    className="w-full rounded-t-[28px] px-3 pt-4 pb-5 text-center"
-                    style={{
-                      height: podium.height,
-                      background: `linear-gradient(180deg, ${podium.accent}26 0%, rgba(22,33,62,0.94) 68%)`,
-                      border: `1px solid ${podium.accent}55`,
-                      boxShadow: podium.glow,
-                    }}
-                  >
-                    <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-night text-white">
-                      <Icon size={18} />
-                    </div>
-                    <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.24em]" style={{ color: podium.accent }}>
-                      {podium.label}
-                    </p>
-                    <p className="mt-2 truncate text-base font-black text-white">{player.username}</p>
-                    <p className="mt-1 text-3xl font-black text-white">{player.rank_points}</p>
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted">SR</p>
-                    <div className="mt-4 flex justify-center gap-3 text-xs text-muted">
+                    <div
+                      className="flex items-center gap-2.5 text-[10px] font-semibold"
+                      style={{ color: 'rgba(168,168,179,0.6)' }}
+                    >
                       <span>{player.wins}V</span>
                       <span>{player.losses}D</span>
-                      <span>{getWinRate(player)}%</span>
+                      <span>{player.mvp_count} MVP</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Swords size={10} />
+                        {player.total_games}
+                      </span>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ) : (
-          <div
-            className="mt-8 rounded-3xl px-5 py-10 text-center"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            <p className="text-lg font-bold text-white">Aucun joueur classé pour le moment</p>
-            <p className="mt-2 text-sm text-muted">
-              Termine les matchs de placement pour apparaître ici.
-            </p>
-          </div>
-        )}
-      </motion.section>
-
-      <motion.section
-        className="mt-5 rounded-[32px] p-4"
-        style={{
-          background: 'linear-gradient(180deg, rgba(12,18,33,0.98), rgba(22,33,62,0.9))',
-          border: '1px solid rgba(255,255,255,0.06)',
-        }}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.45 }}
-      >
-        <div className="flex items-center justify-between px-2 pb-3">
-          <div>
-            <h2 className="text-lg font-black text-white">Classement complet</h2>
-            <p className="text-xs text-muted">Trié par SR décroissant</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {players.map((player, index) => (
-            <motion.div
-              key={player.id}
-              className="flex items-center gap-3 rounded-3xl px-4 py-4"
-              style={{
-                background:
-                  index < 3
-                    ? 'linear-gradient(135deg, rgba(245,166,35,0.12), rgba(22,33,62,0.96))'
-                    : 'rgba(255,255,255,0.04)',
-                border:
-                  index < 3
-                    ? '1px solid rgba(245,166,35,0.24)'
-                    : '1px solid rgba(255,255,255,0.06)',
-              }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.03 * index, duration: 0.28 }}
-            >
-              <div className="w-9 text-center text-lg font-black text-white">{index + 1}</div>
-
-              {player.avatar_url ? (
-                <img
-                  src={player.avatar_url}
-                  alt={player.username}
-                  className="h-12 w-12 rounded-2xl object-cover"
-                />
-              ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-night-3 text-lg font-black text-accent">
-                  {player.username.slice(0, 1).toUpperCase()}
                 </div>
-              )}
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-black text-white">{player.username}</p>
-                  {index === 0 ? <Crown size={14} className="text-gold-ui" /> : null}
+                {/* SR */}
+                <div className="text-right flex-shrink-0">
+                  <p className="text-lg font-black text-white leading-none">{player.rank_points}</p>
+                  <p
+                    className="text-[9px] font-black uppercase mt-0.5"
+                    style={{ color: 'rgba(168,168,179,0.5)', letterSpacing: '0.2em' }}
+                  >
+                    SR
+                  </p>
                 </div>
-                <div className="mt-2 flex items-center gap-3">
-                  <RankBadge
-                    rank={player.rank}
-                    tier={player.rank_tier}
-                    size="sm"
-                    showLabel={false}
-                    animated={false}
-                  />
-                  <div className="flex items-center gap-3 text-[11px] text-muted">
-                    <span>{player.wins}V</span>
-                    <span>{player.losses}D</span>
-                    <span>{player.mvp_count} MVP</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Swords size={12} />
-                      {player.total_games}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              </motion.div>
+            ))}
 
-              <div className="text-right">
-                <p className="text-xl font-black text-white">{player.rank_points}</p>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-muted">SR</p>
-              </div>
-            </motion.div>
-          ))}
-
-          {remaining.length === 0 && players.length > 0 ? (
-            <p className="px-2 pt-2 text-center text-xs text-muted">
-              Le podium résume déjà tout le classement disponible.
-            </p>
-          ) : null}
-        </div>
-      </motion.section>
+            {remaining.length === 0 && players.length > 0 ? (
+              <p
+                className="px-2 pt-3 text-center text-[10px] font-semibold uppercase"
+                style={{ color: 'rgba(168,168,179,0.4)', letterSpacing: '0.3em' }}
+              >
+                Le podium résume déjà tout le classement disponible.
+              </p>
+            ) : null}
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
