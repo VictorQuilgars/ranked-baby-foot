@@ -62,6 +62,18 @@ export function useMatch(initialMatch: MatchLobby): UseMatchReturn {
           router.refresh();
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'match_events',
+          filter: `match_id=eq.${initialMatch.id}`,
+        },
+        () => {
+          router.refresh();
+        },
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

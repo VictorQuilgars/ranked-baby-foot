@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Copy, LogOut, Pause, Play, PlayCircle, Shield, Square, Star, Swords, Trophy, Users } from 'lucide-react';
+import { CheckCircle, Copy, LogOut, Pause, Play, PlayCircle, Shield, Square, Star, Swords, Trophy, Users, XCircle } from 'lucide-react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { apiRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
@@ -32,6 +32,18 @@ export type LobbyPlayer = {
   } | null;
 };
 
+export type PendingGoal = {
+  id: string;
+  team: 'A' | 'B';
+  scorer_id: string | null;
+  created_at: string;
+  goal_votes: Array<{
+    player_id: string;
+    team: string;
+    vote: string;
+  }>;
+};
+
 export type MatchLobby = {
   id: string;
   code: string;
@@ -52,6 +64,7 @@ export type MatchLobby = {
 type MatchLobbyClientProps = {
   match: MatchLobby;
   currentUserId: string;
+  pendingGoal: PendingGoal | null;
 };
 
 const SLOT_ORDER: Array<{ team: Team; position: Position; label: string; accent: string }> = [
@@ -69,12 +82,13 @@ async function getAccessToken() {
   return session?.access_token ?? null;
 }
 
-export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLobbyClientProps) {
+export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGoal }: MatchLobbyClientProps) {
   const router = useRouter();
   const { match } = useMatch(initialMatch);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const currentPlayer = match.match_players.find((e) => e.player_id === currentUserId) ?? null;
   const isHost = match.host_id === currentUserId;
@@ -155,6 +169,34 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
       await apiRequest(`/api/matches/${match.id}/finish`, { method: 'POST', token });
     });
   }
+
+  function voteGoal(vote: 'confirm' | 'reject') {
+    if (!pendingGoal) return;
+    handleAction(async () => {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/goal/vote`, {
+        method: 'POST',
+        token,
+        body: { eventId: pendingGoal.id, vote },
+      });
+    });
+  }
+
+  // Compte à rebours 30s pour les buts en attente
+  useEffect(() => {
+    if (!pendingGoal) { setCountdown(null); return; }
+    const expiresAt = new Date(pendingGoal.created_at).getTime() + 30_000;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+      setCountdown(remaining);
+      if (remaining === 0) voteGoal('reject'); // auto-rejet à l'expiration
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingGoal?.id]);
 
   async function copyCode() {
     try {
@@ -555,8 +597,99 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
             </div>
           </motion.div>
 
+          {/* Pending goal banner */}
+          {pendingGoal && (() => {
+            const goalAccent = TEAM_ACCENT[pendingGoal.team];
+            const myVote = pendingGoal.goal_votes.find((v) => v.player_id === currentUserId);
+            const teamAConfirmed = pendingGoal.goal_votes.some((v) => v.team === 'A' && v.vote === 'confirm');
+            const teamBConfirmed = pendingGoal.goal_votes.some((v) => v.team === 'B' && v.vote === 'confirm');
+            return (
+              <motion.div
+                style={{
+                  background: `${goalAccent}12`,
+                  border: `1px solid ${goalAccent}44`,
+                  borderLeft: `4px solid ${goalAccent}`,
+                  borderRadius: 4,
+                  padding: '16px',
+                }}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: `${goalAccent}aa` }}>
+                      But en attente
+                    </p>
+                    <p className="text-base font-black text-white mt-0.5">
+                      Équipe {pendingGoal.team} — validation requise
+                    </p>
+                  </div>
+                  {countdown !== null && (
+                    <span
+                      className="text-2xl font-black tabular-nums"
+                      style={{ color: countdown <= 10 ? '#f87171' : 'rgba(255,255,255,0.5)' }}
+                    >
+                      {countdown}s
+                    </span>
+                  )}
+                </div>
+
+                {/* État de validation par équipe */}
+                <div className="flex gap-3 mb-4">
+                  {(['A', 'B'] as Team[]).map((t) => {
+                    const confirmed = t === 'A' ? teamAConfirmed : teamBConfirmed;
+                    return (
+                      <div
+                        key={t}
+                        className="flex items-center gap-1.5 text-xs font-bold"
+                        style={{ color: confirmed ? '#4ade80' : 'rgba(255,255,255,0.4)' }}
+                      >
+                        {confirmed
+                          ? <CheckCircle size={13} />
+                          : <div className="w-3 h-3 rounded-full border border-white/20" />
+                        }
+                        Équipe {t}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Boutons vote (cachés si déjà voté) */}
+                {!myVote ? (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => voteGoal('confirm')}
+                      disabled={isPending}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-black text-white uppercase tracking-wide disabled:opacity-50"
+                      style={{ borderRadius: 3, background: '#16a34a', boxShadow: '0 3px 0 #0f6b2e' }}
+                    >
+                      <CheckCircle size={14} />
+                      Valider
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => voteGoal('reject')}
+                      disabled={isPending}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-black text-white uppercase tracking-wide disabled:opacity-50"
+                      style={{ borderRadius: 3, background: '#dc2626', boxShadow: '0 3px 0 #7f1d1d' }}
+                    >
+                      <XCircle size={14} />
+                      Contester
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-center font-bold" style={{ color: myVote.vote === 'confirm' ? '#4ade80' : '#f87171' }}>
+                    {myVote.vote === 'confirm' ? 'Tu as validé ce but' : 'Tu as contesté ce but'}
+                  </p>
+                )}
+              </motion.div>
+            );
+          })()}
+
           {/* Goal buttons */}
-          {canRecordGoal ? (
+          {canRecordGoal && !pendingGoal ? (
             <motion.div
               className="grid grid-cols-2 gap-3"
               initial={{ opacity: 0, y: 16 }}
@@ -591,13 +724,13 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                 );
               })}
             </motion.div>
-          ) : (
+          ) : !pendingGoal ? (
             <p className="text-sm text-muted text-center">
               {match.referee_id
                 ? "Seul l'arbitre peut enregistrer les buts."
                 : "En attente d'un but…"}
             </p>
-          )}
+          ) : null}
 
           {/* Host/referee: pause + finish controls */}
           {isHostOrReferee && (
