@@ -8,20 +8,32 @@
 ## Vue d'Ensemble
 
 ```
-Phase 1 → Setup & Infrastructure (Next.js 15 + Supabase)
-Phase 2 → Auth & Profils
-Phase 3 → Matchs & Lobbies (MVP testable)
-Phase 4 → Interface de Jeu & Arbitre
-Phase 5 → Algorithme SR & Rangs
-Phase 6 → UI Clash Royale & Animations
-Phase 7 → QR Code, Invitations & Polish
+v0.1  Phase 1 → Setup & Infrastructure (Next.js 15 + Supabase)
+v0.2  Phase 2 → Auth & Profils
+v0.3  Phase 3 → Matchs & Lobbies
+v0.4  Phase 4 → Interface de Jeu & Arbitre
+v1.0  Phase 5 → Algorithme SR & Rangs          ← MVP prod-ready
+v1.1  Phase 6 → UI Clash Royale & Animations
+v1.2  Phase 7 → QR Code, Invitations & Polish
+v2.0  Nice-to-have → Auth Apple, Notifs push, Stats avancées
 ```
+
+| Version | Phases | Livrable |
+|---------|--------|----------|
+| **v0.1** | Phase 1 | Infra prête, base de données initialisée |
+| **v0.2** | Phase 2 | Connexion Google, profil joueur fonctionnel |
+| **v0.3** | Phase 3 | Premier match jouable de bout en bout |
+| **v0.4** | Phase 4 | Partie complète avec arbitre et écran de résultats |
+| **v1.0** | Phase 5 | **MVP — SR calculé, rangs mis à jour, déployable en prod** |
+| **v1.1** | Phase 6 | Polish UI, animations, leaderboard complet |
+| **v1.2** | Phase 7 | QR Code, invitations, feed d'activité |
+| **v2.0** | Nice-to-have | Auth Apple, notifications push, stats avancées |
 
 **Architecture** : tout dans Next.js 15. Les Route Handlers (`app/api/`) remplacent Express. La `SUPABASE_SERVICE_ROLE_KEY` est utilisée uniquement dans ces handlers (jamais côté client).
 
 ---
 
-## Phase 1 — Setup & Infrastructure
+## v0.1 — Phase 1 : Setup & Infrastructure
 
 ### 1.1 Structure du Projet
 
@@ -173,7 +185,7 @@ Exécuter `doc/supabase-init.sql` dans l'éditeur SQL Supabase.
 
 ---
 
-## Phase 2 — Authentification & Profils
+## v0.2 — Phase 2 : Authentification & Profils
 
 ### 2.1 Pages Auth
 
@@ -269,7 +281,7 @@ export async function POST(request: NextRequest) {
 
 ---
 
-## Phase 3 — Matchs & Lobbies
+## v0.3 — Phase 3 : Matchs & Lobbies
 
 ### 3.1 Route Handlers — Matchs
 
@@ -324,7 +336,7 @@ useEffect(() => {
 
 ---
 
-## Phase 4 — Interface de Jeu & Arbitre
+## v0.4 — Phase 4 : Interface de Jeu & Arbitre
 
 ### 4.1 Route Handlers — Jeu
 
@@ -352,7 +364,7 @@ Dans `app/api/matches/[id]/finish/route.ts` :
 
 ---
 
-## Phase 5 — Algorithme SR & Rangs
+## v1.0 — Phase 5 : Algorithme SR & Rangs
 
 ### 5.1 rankService.ts
 
@@ -431,7 +443,7 @@ SELECT cron.schedule(
 
 ---
 
-## Phase 6 — UI Clash Royale & Animations
+## v1.1 — Phase 6 : UI Clash Royale & Animations
 
 ### 6.1 Design System (déjà partiellement en place)
 
@@ -471,7 +483,7 @@ colors: {
 
 ---
 
-## Phase 7 — QR Code, Invitations & Polish
+## v1.2 — Phase 7 : QR Code, Invitations & Polish
 
 ### 7.1 QR Code
 
@@ -526,7 +538,7 @@ npm run lint    # vérification TypeScript + ESLint
 
 ## Ordre des Priorités
 
-### Must-Have (MVP)
+### v0.1 – v1.0 : Must-Have (MVP)
 1. Auth Google + création profil automatique
 2. Home page avec badge de rang
 3. Création / Rejoindre un match via code
@@ -534,13 +546,13 @@ npm run lint    # vérification TypeScript + ESLint
 5. Calcul SR et mise à jour des rangs
 6. Leaderboard
 
-### Should-Have
+### v1.1 – v1.2 : Should-Have
 7. QR Code
 8. Invitations entre joueurs
 9. Animations UI (rank up, fin de match)
 10. Profil éditable
 
-### Nice-to-Have
+### v2.0 : Nice-to-Have
 11. Auth Apple
 12. Feed d'activité
 13. Statistiques avancées
