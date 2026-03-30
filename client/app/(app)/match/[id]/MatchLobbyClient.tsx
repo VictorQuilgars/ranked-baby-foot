@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Copy, LogOut, Play, Shield, Star, Swords, Trophy, Users } from 'lucide-react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { apiRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
+import { useMatch } from '@/hooks/useMatch';
 import { cn } from '@/lib/utils';
 import type { RankName } from '@/types/player';
 
@@ -70,48 +71,10 @@ async function getAccessToken() {
 
 export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLobbyClientProps) {
   const router = useRouter();
-  const [match, setMatch] = useState<MatchLobby>(initialMatch);
+  const { match } = useMatch(initialMatch);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  // Sync server data after router.refresh()
-  useEffect(() => {
-    setMatch(initialMatch);
-  }, [initialMatch]);
-
-  // Realtime subscription
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`match-${initialMatch.id}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'matches',
-        filter: `id=eq.${initialMatch.id}`,
-      }, (payload) => {
-        setMatch(prev => ({
-          ...prev,
-          status: payload.new.status,
-          score_team_a: payload.new.score_team_a,
-          score_team_b: payload.new.score_team_b,
-          winner_team: payload.new.winner_team ?? null,
-          finished_at: payload.new.finished_at ?? null,
-        }));
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'match_players',
-        filter: `match_id=eq.${initialMatch.id}`,
-      }, () => {
-        router.refresh();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [initialMatch.id, router]);
 
   const currentPlayer = match.match_players.find((e) => e.player_id === currentUserId) ?? null;
   const isHost = match.host_id === currentUserId;
