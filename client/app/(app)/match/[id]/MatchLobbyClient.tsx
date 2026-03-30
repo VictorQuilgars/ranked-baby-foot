@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Copy, LogOut, Play, Shield, Star, Swords, Trophy, Users } from 'lucide-react';
+import { Copy, LogOut, Pause, Play, PlayCircle, Shield, Square, Star, Swords, Trophy, Users } from 'lucide-react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { apiRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
@@ -38,7 +38,7 @@ export type MatchLobby = {
   name: string | null;
   host_id: string | null;
   referee_id: string | null;
-  status: 'lobby' | 'in_progress' | 'finished' | 'cancelled';
+  status: 'lobby' | 'in_progress' | 'paused' | 'finished' | 'cancelled';
   score_target: number;
   score_team_a: number;
   score_team_b: number;
@@ -78,6 +78,8 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
 
   const currentPlayer = match.match_players.find((e) => e.player_id === currentUserId) ?? null;
   const isHost = match.host_id === currentUserId;
+  const isReferee = match.referee_id === currentUserId;
+  const isHostOrReferee = isHost || isReferee;
   const canStart = isHost && match.status === 'lobby' && match.match_players.length === 4;
   const canRecordGoal = match.status === 'in_progress' &&
     (!match.referee_id || match.referee_id === currentUserId);
@@ -127,6 +129,30 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
       const token = await getAccessToken();
       if (!token) throw new Error('Session introuvable, reconnecte-toi.');
       await apiRequest(`/api/matches/${match.id}/goal`, { method: 'POST', token, body: { team } });
+    });
+  }
+
+  function pauseMatch() {
+    handleAction(async () => {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/pause`, { method: 'POST', token });
+    });
+  }
+
+  function resumeMatch() {
+    handleAction(async () => {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/resume`, { method: 'POST', token });
+    });
+  }
+
+  function finishMatch() {
+    handleAction(async () => {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Session introuvable, reconnecte-toi.');
+      await apiRequest(`/api/matches/${match.id}/finish`, { method: 'POST', token });
     });
   }
 
@@ -285,6 +311,107 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
           >
             Retour à l&apos;accueil
           </motion.button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── PAUSED VIEW ───────────────────────────────────────────────────────────
+  if (match.status === 'paused') {
+    return (
+      <div
+        className="min-h-screen flex flex-col pb-28 relative overflow-hidden"
+        style={{ background: '#07080d' }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 70% 40% at 50% 5%, #f5a62318 0%, transparent 60%)',
+          }}
+        />
+
+        <div className="relative z-10 px-5 pt-8 flex flex-col gap-5">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.5em]" style={{ color: '#f5a623aa' }}>
+                ◆ Pause ◆
+              </p>
+              <h1 className="text-lg font-black text-white mt-0.5 uppercase tracking-wide">
+                {match.name ?? `Match ${match.code}`}
+              </h1>
+            </div>
+            <button
+              type="button"
+              onClick={copyCode}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white"
+              style={{ borderRadius: 3, border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.06)' }}
+            >
+              <Copy size={14} />
+              {match.code}
+            </button>
+          </div>
+
+          {/* Score */}
+          <motion.div
+            style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderLeft: '4px solid #f5a623',
+              borderRadius: 4,
+              padding: '24px',
+            }}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.5em] mb-2" style={{ color: '#00b4d8' }}>Équipe A</p>
+                <p className="text-7xl font-black leading-none" style={{ color: '#00b4d8' }}>{match.score_team_a}</p>
+              </div>
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <Pause size={20} style={{ color: '#f5a623' }} />
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-muted">/{match.score_target}</p>
+              </div>
+              <div className="flex-1 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.5em] mb-2" style={{ color: '#e94560' }}>Équipe B</p>
+                <p className="text-7xl font-black leading-none" style={{ color: '#e94560' }}>{match.score_team_b}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Host controls */}
+          {isHostOrReferee && (
+            <motion.div
+              className="flex flex-col gap-3"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+            >
+              <button
+                type="button"
+                onClick={resumeMatch}
+                disabled={isPending}
+                className="btn-cod-red justify-center gap-2 w-full disabled:opacity-50"
+              >
+                <PlayCircle size={16} />
+                Reprendre le match
+              </button>
+              <button
+                type="button"
+                onClick={finishMatch}
+                disabled={isPending}
+                className="btn-cod-dark justify-center gap-2 w-full disabled:opacity-50"
+              >
+                <Square size={16} />
+                Terminer le match
+              </button>
+            </motion.div>
+          )}
+
+          {feedback && <p className="text-sm font-medium text-green-400 text-center">{feedback}</p>}
+          {error && <p className="text-sm font-medium text-red-400 text-center">{error}</p>}
         </div>
       </div>
     );
@@ -470,6 +597,35 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId }: MatchLo
                 ? "Seul l'arbitre peut enregistrer les buts."
                 : "En attente d'un but…"}
             </p>
+          )}
+
+          {/* Host/referee: pause + finish controls */}
+          {isHostOrReferee && (
+            <motion.div
+              className="flex gap-3"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <button
+                type="button"
+                onClick={pauseMatch}
+                disabled={isPending}
+                className="btn-cod-dark flex-1 justify-center gap-2 disabled:opacity-50"
+              >
+                <Pause size={14} />
+                Pause
+              </button>
+              <button
+                type="button"
+                onClick={finishMatch}
+                disabled={isPending}
+                className="btn-cod-dark flex-1 justify-center gap-2 disabled:opacity-50"
+              >
+                <Square size={14} />
+                Terminer
+              </button>
+            </motion.div>
           )}
 
           {feedback && <p className="text-sm font-medium text-green-400 text-center">{feedback}</p>}
