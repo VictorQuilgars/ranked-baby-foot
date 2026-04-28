@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle, Copy, LogOut, Pause, Play, PlayCircle, Shield, Square, Star, Swords, Trophy, Users, XCircle } from 'lucide-react';
+import { CheckCircle, Copy, LogOut, Pause, Play, PlayCircle, QrCode, Shield, Square, Star, Swords, Trophy, Users, XCircle } from 'lucide-react';
 import { ConfettiEffect } from '@/components/match/ConfettiEffect';
+import { QRCodeModal } from '@/components/match/QRCodeModal';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { RankUpModal } from '@/components/rank/RankUpModal';
 import { getRankFromSR } from '@/lib/services/rankService';
@@ -94,6 +95,7 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
   const [isPending, startTransition] = useTransition();
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showRankUp, setShowRankUp] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const rankUpShownRef = useRef(false);
 
   const currentPlayer = match.match_players.find((e) => e.player_id === currentUserId) ?? null;
@@ -853,19 +855,29 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
             {match.name ?? `Lobby ${match.code}`}
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={copyCode}
-          className="shrink-0 inline-flex items-center gap-2 px-3 py-2.5 text-sm font-bold text-white"
-          style={{
-            borderRadius: 3,
-            border: '1px solid rgba(255,255,255,0.10)',
-            background: 'rgba(255,255,255,0.06)',
-          }}
-        >
-          <Copy size={14} />
-          {match.code}
-        </button>
+        <div className="shrink-0 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={copyCode}
+            className="inline-flex items-center gap-2 px-3 py-2.5 text-sm font-bold text-white"
+            style={{
+              borderRadius: 3,
+              border: '1px solid rgba(255,255,255,0.10)',
+              background: 'rgba(255,255,255,0.06)',
+            }}
+          >
+            <Copy size={14} />
+            {match.code}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowQR(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white"
+            style={{ borderRadius: 3, border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.06)' }}
+          >
+            <QrCode size={14} />
+          </button>
+        </div>
       </motion.div>
 
       {/* Info strip — 3 sharp stat panels */}
@@ -1039,6 +1051,13 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
         {feedback ? <p className="text-sm font-medium text-green-400">{feedback}</p> : null}
         {error ? <p className="text-sm font-medium text-red-400">{error}</p> : null}
       </motion.div>
+
+      <QRCodeModal
+        isOpen={showQR}
+        code={match.code}
+        matchId={match.id}
+        onClose={() => setShowQR(false)}
+      />
     </div>
   );
 }
