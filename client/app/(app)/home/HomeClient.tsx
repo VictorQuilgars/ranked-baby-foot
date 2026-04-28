@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ChevronRight, QrCode } from 'lucide-react';
+import { useState } from 'react';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { SRBar } from '@/components/rank/SRBar';
 import { RANK_COLORS, formatRankLabel, type RankName } from '@/types/player';
+import { MatchFeedCard, type FeedMatch } from '@/components/match/MatchFeedCard';
 
 interface HomeClientProps {
   player: {
@@ -20,9 +22,11 @@ interface HomeClientProps {
     losses: number;
     total_games: number;
   } | null;
+  activeMatches: FeedMatch[];
+  recentMatches: FeedMatch[];
 }
 
-export function HomeClient({ player }: HomeClientProps) {
+export function HomeClient({ player, activeMatches, recentMatches }: HomeClientProps) {
   if (!player) return (
     <div className="min-h-screen flex items-center justify-center bg-night">
       <p className="text-[#4a4a5a] text-sm uppercase tracking-widest">Erreur de chargement</p>
@@ -284,7 +288,7 @@ export function HomeClient({ player }: HomeClientProps) {
         </motion.div>
       </div>
 
-      {/* ── Boutons d'action ── */}
+      {/* ── Boutons d'action + Feed ── */}
       <div className="relative z-10 px-4 pb-28 flex flex-col gap-2.5">
         {/* Séparateur */}
         <div
@@ -319,7 +323,69 @@ export function HomeClient({ player }: HomeClientProps) {
             <QrCode size={18} strokeWidth={1.5} className="text-white/25 flex-shrink-0" />
           </Link>
         </motion.div>
+
+        {/* Feed */}
+        <div className="w-full mt-6 pb-6">
+          <p
+            className="text-[9px] font-black uppercase tracking-[0.5em] mb-4"
+            style={{ color: 'rgba(168,168,179,0.5)' }}
+          >
+            Matchs
+          </p>
+          <FeedTabs activeMatches={activeMatches} recentMatches={recentMatches} />
+        </div>
       </div>
+    </div>
+  );
+}
+
+type FeedTabId = 'live' | 'recent';
+
+function FeedTabs({ activeMatches, recentMatches }: { activeMatches: FeedMatch[]; recentMatches: FeedMatch[] }) {
+  const [tab, setTab] = useState<FeedTabId>('live');
+  const matches = tab === 'live' ? activeMatches : recentMatches;
+
+  return (
+    <div>
+      <div
+        className="flex mb-4"
+        style={{ gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 4, padding: 3 }}
+      >
+        {(['live', 'recent'] as FeedTabId[]).map((id) => {
+          const label = id === 'live' ? 'En cours' : 'Terminés';
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className="flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest"
+              style={{
+                borderRadius: 3,
+                background: tab === id ? 'rgba(255,255,255,0.07)' : 'transparent',
+                color: tab === id ? '#e94560' : 'rgba(168,168,179,0.5)',
+                border: tab === id ? '1px solid rgba(233,69,96,0.3)' : '1px solid transparent',
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {matches.length === 0 ? (
+        <p
+          className="text-center text-xs py-6 uppercase tracking-widest"
+          style={{ color: 'rgba(168,168,179,0.3)' }}
+        >
+          Aucun match {tab === 'live' ? 'en cours' : 'récent'}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {matches.map((match, i) => (
+            <MatchFeedCard key={match.id} match={match} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
