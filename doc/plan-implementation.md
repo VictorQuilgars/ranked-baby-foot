@@ -13,8 +13,8 @@ v0.2  Phase 2 → Auth & Profils
 v0.3  Phase 3 → Matchs & Lobbies
 v0.4  Phase 4 → Interface de Jeu & Arbitre
 v1.0  Phase 5 → Algorithme SR & Rangs          ← MVP prod-ready
-v1.1  Phase 6 → UI Clash Royale & Animations
-v1.2  Phase 7 → QR Code, Invitations & Polish
+v1.1  Phase 6 → UI Clash Royale & Animations   ✅ Implémenté
+v1.2  Phase 7 → QR Code, Invitations & Polish  ✅ Implémenté
 v2.0  Nice-to-have → Auth Apple, Notifs push, Stats avancées
 ```
 
@@ -25,8 +25,8 @@ v2.0  Nice-to-have → Auth Apple, Notifs push, Stats avancées
 | **v0.3** | Phase 3 | Premier match jouable de bout en bout |
 | **v0.4** | Phase 4 | Partie complète avec arbitre et écran de résultats |
 | **v1.0** | Phase 5 | **MVP — SR calculé, rangs mis à jour, déployable en prod** |
-| **v1.1** | Phase 6 | Polish UI, animations, leaderboard complet |
-| **v1.2** | Phase 7 | QR Code, invitations, feed d'activité |
+| **v1.1** | Phase 6 | Polish UI, animations, leaderboard complet ✅ Implémenté |
+| **v1.2** | Phase 7 | QR Code, invitations, feed d'activité ✅ Implémenté |
 | **v2.0** | Nice-to-have | Auth Apple, notifications push, stats avancées |
 
 **Architecture** : tout dans Next.js 15. Les Route Handlers (`app/api/`) remplacent Express. La `SUPABASE_SERVICE_ROLE_KEY` est utilisée uniquement dans ces handlers (jamais côté client).
