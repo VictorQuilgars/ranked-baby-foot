@@ -13,6 +13,7 @@ export function ConfettiEffect({ active, color }: ConfettiEffectProps) {
     if (!active) return;
     const end = Date.now() + 2500;
     const colors = [color, '#f5a623', '#ffffff'];
+    let rafId: number;
 
     const frame = () => {
       confetti({
@@ -29,9 +30,10 @@ export function ConfettiEffect({ active, color }: ConfettiEffectProps) {
         origin: { x: 1 },
         colors,
       });
-      if (Date.now() < end) requestAnimationFrame(frame);
+      if (Date.now() < end) rafId = requestAnimationFrame(frame);
     };
-    frame();
+    rafId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafId);
   }, [active, color]);
 
   return null;
