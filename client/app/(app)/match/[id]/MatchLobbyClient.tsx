@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Copy, LogOut, Pause, Play, PlayCircle, QrCode, Shield, Square, Star, Swords, Trophy, Users, XCircle } from 'lucide-react';
 import { ConfettiEffect } from '@/components/match/ConfettiEffect';
 import { QRCodeModal } from '@/components/match/QRCodeModal';
+import { InvitePanel } from '@/components/match/InvitePanel';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { RankUpModal } from '@/components/rank/RankUpModal';
 import { getRankFromSR } from '@/lib/services/rankService';
@@ -1010,6 +1011,20 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
             </div>
           );
         })}
+      </motion.div>
+
+      {/* Invite Panel */}
+      <motion.div
+        className="relative z-10"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.35 }}
+      >
+        <InvitePanel
+          matchId={match.id}
+          currentUserId={currentUserId}
+          alreadyInvited={match.match_players.map((p) => p.player_id)}
+        />
       </motion.div>
 
       {/* Action buttons */}
