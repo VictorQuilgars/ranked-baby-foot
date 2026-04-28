@@ -13,7 +13,12 @@ interface QRScannerProps {
 
 export function QRScanner({ isOpen, onResult, onClose }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const onResultRef = useRef(onResult);
   const SCANNER_ID = 'qr-reader';
+
+  useEffect(() => {
+    onResultRef.current = onResult;
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,7 +39,7 @@ export function QRScanner({ isOpen, onResult, onClose }: QRScannerProps) {
 
             if (code.length === 6) {
               scanner.stop().catch(() => null);
-              onResult(code);
+              onResultRef.current(code);
             }
           },
           () => null,
@@ -47,7 +52,7 @@ export function QRScanner({ isOpen, onResult, onClose }: QRScannerProps) {
       scannerRef.current?.stop().catch(() => null);
       scannerRef.current = null;
     };
-  }, [isOpen, onResult]);
+  }, [isOpen]);
 
   function handleClose() {
     scannerRef.current?.stop().catch(() => null);
