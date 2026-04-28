@@ -217,7 +217,8 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
     const rankChanged = rankOrder.indexOf(playerData.rank) > rankOrder.indexOf(oldRank);
     if (rankChanged) {
       rankUpShownRef.current = true;
-      setTimeout(() => setShowRankUp(true), 1200);
+      const timeoutId = setTimeout(() => setShowRankUp(true), 1200);
+      return () => clearTimeout(timeoutId);
     }
   }, [match.status, match.match_players, currentUserId]);
 
