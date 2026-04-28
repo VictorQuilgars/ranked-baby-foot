@@ -18,6 +18,7 @@ export function QRCodeModal({ isOpen, code, matchId, onClose }: QRCodeModalProps
 
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
+    setError(false);
     const url = `${window.location.origin}/match/join?code=${code}`;
     QRCode.toCanvas(canvasRef.current, url, {
       width: 260,
