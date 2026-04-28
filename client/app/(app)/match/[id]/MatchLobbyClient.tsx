@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, Copy, LogOut, Pause, Play, PlayCircle, Shield, Square, Star, Swords, Trophy, Users, XCircle } from 'lucide-react';
 import { ConfettiEffect } from '@/components/match/ConfettiEffect';
 import { RankBadge } from '@/components/rank/RankBadge';
+import { RankUpModal } from '@/components/rank/RankUpModal';
+import { getRankFromSR } from '@/lib/services/rankService';
 import { apiRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { useMatch } from '@/hooks/useMatch';
@@ -29,6 +31,7 @@ export type LobbyPlayer = {
     avatar_url: string | null;
     rank: RankName;
     rank_tier: number;
+    rank_points: number;
     placement_matches_left: number;
   } | null;
 };
@@ -90,6 +93,8 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showRankUp, setShowRankUp] = useState(false);
+  const rankUpShownRef = useRef(false);
 
   const currentPlayer = match.match_players.find((e) => e.player_id === currentUserId) ?? null;
   const isHost = match.host_id === currentUserId;
@@ -198,6 +203,23 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingGoal?.id]);
+
+  useEffect(() => {
+    if (match.status !== 'finished' || rankUpShownRef.current) return;
+    const myEntry = match.match_players.find((p) => p.player_id === currentUserId);
+    if (!myEntry || myEntry.sr_change === null) return;
+    const playerData = myEntry.players;
+    if (!playerData) return;
+    const currentSR = playerData.rank_points ?? 0;
+    const oldSR = Math.max(0, currentSR - myEntry.sr_change);
+    const { rank: oldRank } = getRankFromSR(oldSR);
+    const rankOrder = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Crimson', 'Iridescent'];
+    const rankChanged = rankOrder.indexOf(playerData.rank) > rankOrder.indexOf(oldRank);
+    if (rankChanged) {
+      rankUpShownRef.current = true;
+      setTimeout(() => setShowRankUp(true), 1200);
+    }
+  }, [match.status, match.match_players, currentUserId]);
 
   async function copyCode() {
     try {
@@ -362,6 +384,13 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
             Retour à l&apos;accueil
           </motion.button>
         </div>
+
+        <RankUpModal
+          isOpen={showRankUp}
+          newRank={(match.match_players.find((p) => p.player_id === currentUserId)?.players?.rank ?? 'Bronze') as RankName}
+          newTier={match.match_players.find((p) => p.player_id === currentUserId)?.players?.rank_tier ?? 1}
+          onClose={() => setShowRankUp(false)}
+        />
       </div>
     );
   }

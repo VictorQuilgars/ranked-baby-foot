@@ -26,7 +26,7 @@ export default async function MatchLobbyPage({ params }: { params: Promise<{ id:
   const { data: match, error } = await admin
     .from('matches')
     .select(
-      'id, code, name, host_id, referee_id, status, score_target, score_team_a, score_team_b, winner_team, created_at, started_at, finished_at, match_players(id, team, position, player_id, goals_scored, is_mvp, sr_change, players(id, username, avatar_url, rank, rank_tier, placement_matches_left))'
+      'id, code, name, host_id, referee_id, status, score_target, score_team_a, score_team_b, winner_team, created_at, started_at, finished_at, match_players(id, team, position, player_id, goals_scored, is_mvp, sr_change, players(id, username, avatar_url, rank, rank_tier, rank_points, placement_matches_left))'
     )
     .eq('id', id)
     .single();
