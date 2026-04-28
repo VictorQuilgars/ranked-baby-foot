@@ -6,12 +6,14 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, Search, ScanLine } from 'lucide-react';
 import Link from 'next/link';
 import { apiRequest } from '@/lib/api';
+import { QRScanner } from '@/components/match/QRScanner';
 
 export function JoinMatchClient() {
   const router = useRouter();
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [showScanner, setShowScanner] = useState(false);
 
   function lookupMatch() {
     const normalizedCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
@@ -118,29 +120,38 @@ export function JoinMatchClient() {
             ) : null}
           </div>
 
-          {/* QR / invitations info panel */}
-          <div
+          <button
+            type="button"
+            onClick={() => setShowScanner(true)}
+            className="w-full flex items-center justify-center gap-3 py-4 text-sm font-bold text-white"
             style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderLeft: '3px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 4,
-              padding: '16px',
             }}
           >
-            <div className="flex items-center gap-3">
-              <ScanLine size={17} style={{ color: 'rgba(168,168,179,0.6)' }} />
-              <p
-                className="text-[9px] font-black uppercase tracking-[0.5em]"
-                style={{ color: 'rgba(168,168,179,0.7)' }}
-              >
-                QR code &amp; invitations
-              </p>
-            </div>
-            <p className="mt-3 text-sm" style={{ color: 'rgba(168,168,179,0.6)', lineHeight: 1.6 }}>
-              Le scan QR et la gestion d&apos;invitations arrivent dans le prochain lot. Pour l&apos;instant, le code lobby est le chemin le plus direct.
-            </p>
-          </div>
+            <ScanLine size={18} style={{ color: '#e94560' }} />
+            Scanner un QR code
+          </button>
+
+          <QRScanner
+            isOpen={showScanner}
+            onResult={(scannedCode) => {
+              setShowScanner(false);
+              setCode(scannedCode);
+              setTimeout(() => {
+                startTransition(async () => {
+                  try {
+                    const response = await apiRequest<{ data: { id: string } }>(`/api/matches/code/${scannedCode}`);
+                    router.push(`/match/${response.data.id}`);
+                  } catch {
+                    setError('QR invalide ou match introuvable');
+                  }
+                });
+              }, 300);
+            }}
+            onClose={() => setShowScanner(false)}
+          />
         </motion.div>
       </div>
     </div>
