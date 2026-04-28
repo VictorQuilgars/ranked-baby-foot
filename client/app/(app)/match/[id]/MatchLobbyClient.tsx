@@ -418,7 +418,16 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 text-center">
                 <p className="text-[9px] font-black uppercase tracking-[0.5em] mb-2" style={{ color: '#00b4d8' }}>Équipe A</p>
-                <p className="text-7xl font-black leading-none" style={{ color: '#00b4d8' }}>{match.score_team_a}</p>
+                <motion.span
+                  key={`score-a-${match.score_team_a}`}
+                  className="text-7xl font-black leading-none"
+                  style={{ color: '#00b4d8', display: 'inline-block' }}
+                  initial={{ scale: 1.5, color: '#f5a623' }}
+                  animate={{ scale: 1, color: '#00b4d8' }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                >
+                  {match.score_team_a}
+                </motion.span>
               </div>
               <div className="flex flex-col items-center gap-1 shrink-0">
                 <Pause size={20} style={{ color: '#f5a623' }} />
@@ -426,7 +435,16 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
               </div>
               <div className="flex-1 text-center">
                 <p className="text-[9px] font-black uppercase tracking-[0.5em] mb-2" style={{ color: '#e94560' }}>Équipe B</p>
-                <p className="text-7xl font-black leading-none" style={{ color: '#e94560' }}>{match.score_team_b}</p>
+                <motion.span
+                  key={`score-b-${match.score_team_b}`}
+                  className="text-7xl font-black leading-none"
+                  style={{ color: '#e94560', display: 'inline-block' }}
+                  initial={{ scale: 1.5, color: '#f5a623' }}
+                  animate={{ scale: 1, color: '#e94560' }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                >
+                  {match.score_team_b}
+                </motion.span>
               </div>
             </div>
           </motion.div>
@@ -531,16 +549,16 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
                 >
                   Équipe A
                 </p>
-                <motion.p
-                  key={match.score_team_a}
+                <motion.span
+                  key={`score-a-${match.score_team_a}`}
                   className="text-7xl font-black leading-none"
-                  style={{ color: '#00b4d8', filter: 'drop-shadow(0 0 18px #00b4d870)' }}
-                  initial={{ scale: 1.4 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  style={{ color: '#00b4d8', filter: 'drop-shadow(0 0 18px #00b4d870)', display: 'inline-block' }}
+                  initial={{ scale: 1.5, color: '#f5a623' }}
+                  animate={{ scale: 1, color: '#00b4d8' }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
                 >
                   {match.score_team_a}
-                </motion.p>
+                </motion.span>
                 <div className="mt-2 space-y-0.5">
                   {teamAPlayers.map((entry) => (
                     <p key={entry.player_id} className="text-xs text-muted truncate">
@@ -566,16 +584,16 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
                 >
                   Équipe B
                 </p>
-                <motion.p
-                  key={match.score_team_b}
+                <motion.span
+                  key={`score-b-${match.score_team_b}`}
                   className="text-7xl font-black leading-none"
-                  style={{ color: '#e94560', filter: 'drop-shadow(0 0 18px #e9456070)' }}
-                  initial={{ scale: 1.4 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  style={{ color: '#e94560', filter: 'drop-shadow(0 0 18px #e9456070)', display: 'inline-block' }}
+                  initial={{ scale: 1.5, color: '#f5a623' }}
+                  animate={{ scale: 1, color: '#e94560' }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
                 >
                   {match.score_team_b}
-                </motion.p>
+                </motion.span>
                 <div className="mt-2 space-y-0.5">
                   {teamBPlayers.map((entry) => (
                     <p key={entry.player_id} className="text-xs text-muted truncate">
