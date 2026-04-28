@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, Copy, LogOut, Pause, Play, PlayCircle, Shield, Square, Star, Swords, Trophy, Users, XCircle } from 'lucide-react';
+import { ConfettiEffect } from '@/components/match/ConfettiEffect';
 import { RankBadge } from '@/components/rank/RankBadge';
 import { apiRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
@@ -210,6 +211,9 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
 
   // ─── FINISHED VIEW ─────────────────────────────────────────────────────────
   if (match.status === 'finished') {
+    const currentPlayerTeam = match.match_players.find(
+      (p) => p.player_id === currentUserId
+    )?.team ?? null;
     const isDraw = match.winner_team === 'draw';
     const winner = match.winner_team as Team | 'draw' | null;
     const winnerAccent = !isDraw && winner && winner !== 'draw' ? TEAM_ACCENT[winner as Team] : '#f5a623';
@@ -219,6 +223,10 @@ export function MatchLobbyClient({ match: initialMatch, currentUserId, pendingGo
         className="min-h-screen flex flex-col pb-28 relative overflow-hidden"
         style={{ background: '#07080d' }}
       >
+        <ConfettiEffect
+          active={!isDraw && winner === currentPlayerTeam}
+          color={winnerAccent}
+        />
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
